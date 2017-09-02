@@ -1,9 +1,8 @@
-
 var busStopInfoDiv = null;
 var arrivalsInfoDiv = null;
 var selectionInfoDiv = null;
 var stopPointInfoDiv = null;
-
+var displayNightBuses = false;
 //
 // HTTP request object
 //
@@ -247,7 +246,7 @@ function bodyLoadedEvent(event)
 
 function displayBusStopInfo(info)
 {
-	var s = "<br>";
+	var s = "<p>";
 	if (info.name)
 		s += info.name;
 	if (info.stopLetter)
@@ -268,19 +267,27 @@ function timeToStationStr(t)
 	var sec = t - (min * 60);
 	var sec10 = Math.floor(sec / 10);
 	sec = sec - (sec10 * 10);
-	return "" + min + ":" + sec10 + sec;
+	return "" + min + ":" + (sec10 ? sec10 * 10 : "00");
 }
 
 function displayArrivalsInfo(info)
 {
-	console.log("displayArrivalsInfo(", info, ")");
-	var s = '<br><table border="1">';
-	info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
-	for (var entry of info) {
-		s += "<tr><td>" + entry.lineName + "<td>" + entry.destinationName + "<td>" + timeToStationStr(entry.timeToStation + 0) + "</tr>";
-	}
-	s += "</table>";
-	arrivalsInfoDiv.innerHTML = s;
+	console.log("displayArrivalsInfo: ", info);
+	if (info.length > 0) {
+		var s = '<br><table border="1">';
+		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
+		for (var entry of info) {
+			var dest = entry.destinationName ? entry.destinationName : '';
+			s += "<tr><td>" + entry.lineName + "</td><td>" + dest + "</td><td>" + timeToStationStr(entry.timeToStation + 0) + "</td>";
+			if (entry.modeName && entry.modeName == "tube") {
+				s += "<td>" + (entry.currentLocation ? entry.currentLocation : "") + "</td>";
+				s += "<td>" + (entry.platformName ? entry.platformName : "") + "</td>";
+			}
+		}
+		s += "</table>";
+		arrivalsInfoDiv.innerHTML = s;
+	} else
+		arrivalsInfoDiv.innerHTML = "<p>(No arrivals information)<br>";
 }
 
 
@@ -308,11 +315,13 @@ function lineIdentifierInfo(obj)
 	var s = '';
 	var first = true;
 	for (var line of obj.lineIdentifier) {
-		if (first) {
-			s = capitalise(line);
-			first = false;
-		} else {
-			s += ', ' + capitalise(line);
+		if (line[0] != 'n' || displayNightBuses) {
+			if (first) {
+				s = capitalise(line);
+				first = false;
+			} else {
+				s += ', ' + capitalise(line);
+			}
 		}
 	}
 	return s;
@@ -370,7 +379,7 @@ function parseAdditionalProperties(obj)
 	return info;
 }
 
-function displayStopPointLeafInfo(obj)
+function displayStopPointLeafInfo(obj, parent)
 {
 	console.log('displayStopPointLeafInfo: ', obj);
 	var s = "";
@@ -378,10 +387,15 @@ function displayStopPointLeafInfo(obj)
 	if (obj.lineGroup && obj.lineGroup.length > 0) {
 		if (obj.stopLetter)
 			s += '<td>Stop ' + obj.stopLetter;
-		else
-			s += '<td>';
+		else {
+			if (parent && parent.commonName) {
+				console.log("Parent =", parent);
+				s += '<td>' + parent.commonName;
+			} else
+				s += '<td>';
+		}
 		var info = lineGroupInfo(obj.lineGroup);
-		s += '<td>' + info.str + '<td>';
+		s += '</td><td>' + info.str + '</td><td>';
 		arrivalsId = info.id;
 
 		var props = parseAdditionalProperties(obj);
@@ -396,16 +410,17 @@ function displayStopPointLeafInfo(obj)
 	return { str: s, id: arrivalsId };
 }
 
-function walkChildren(obj)
+function walkChildren(obj, parent)
 {
 	var s = "";
 	if (obj.children && obj.children.length > 0) {
 		for (var child of obj.children) {
-			s += walkChildren(child);
+			s += walkChildren(child, obj);
 		}
 	} else {
-		var info = displayStopPointLeafInfo(obj);
-		s += '<tr onclick="onclickStopPoint(\'' + info.id + '\')">' + info.str + '</tr>';
+		var info = displayStopPointLeafInfo(obj, parent);
+		if (info.id)
+			s += '<tr onclick="onclickStopPoint(\'' + info.id + '\')">' + info.str + '</tr>';
 	}
 	return s;
 }
@@ -414,7 +429,7 @@ function displayStopPointInfo(obj)
 {
 	console.log("displayStopPointInfo: ", obj);
 	var s = '<br><table border="1">';
-	s += walkChildren(obj);
+	s += walkChildren(obj, obj);
 	s += '</table>';
 	stopPointInfoDiv.innerHTML = s;
 }
@@ -454,7 +469,7 @@ function displaySelection(info)
 				modeStr += ', ' + capitalise(mode);
 			}
 		}
-		s += '<tr onclick="onclickSelectionEvent(event, \'' + entry.id + '\')"><td>' + entry.name + "<td>" + modeStr + "</tr>";
+		s += '<tr onclick="onclickSelectionEvent(event, \'' + entry.id + '\')"><td>' + entry.name + "</td><td>" + modeStr + "</td></tr>";
 	}
 	s += "</table>";
 	selectionInfoDiv.innerHTML = s;
