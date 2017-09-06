@@ -3,6 +3,9 @@ var arrivalsInfoDiv = null;
 var selectionInfoDiv = null;
 var stopPointInfoDiv = null;
 var displayNightBuses = false;
+var highlightedSelectionRow = null;
+var highlightedStopPointRow = null;
+
 //
 // HTTP request object
 //
@@ -18,6 +21,7 @@ var searchReq = {
 		this.resultCallback = resultCallback;
 		this.statusCallback = statusCallback;
 		this.req.open("GET", url, true);
+		this.req.timeSent = Date.now();
 		this.req.send();
 	},
 	status: function () {
@@ -42,6 +46,7 @@ var arrivalsReq = {
 		this.resultCallback = resultCallback;
 		this.statusCallback = statusCallback;
 		this.req.open("GET", url, true);
+		this.req.timeSent = Date.now();
 		this.req.send();
 	},
 	status: function () {
@@ -66,6 +71,7 @@ var stopPointReq = {
 		this.resultCallback = resultCallback;
 		this.statusCallback = statusCallback;
 		this.req.open("GET", url, true);
+		this.req.timeSent = Date.now();
 		this.req.send();
 	},
 	status: function () {
@@ -77,6 +83,15 @@ var stopPointReq = {
 			stopPointReq.statusCallback(stopPointReq.req);
 	}
 };
+
+var readyStateNames = [ "", "(Opened)", "(Headers received)", "(Loading)", "(Done)" ];
+
+function displayRequestStatus(div, req)
+{
+	if (req.readyState > 0 && req.readyState < readyStateNames.length ) {
+		div.innerHTML = "<p>" + readyStateNames[req.readyState];
+	}
+}
 
 function getStopPointSearchUrl(text)
 {
@@ -91,6 +106,20 @@ function getStopPointInfoUrl(id)
 function getStopPointArrivalsUrl(id)
 {
 	return getStopPointInfoUrl(id) + "/Arrivals";
+}
+
+function unhighlightRow(ele)
+{
+	if (ele)
+		ele.setAttribute("class", "");
+}
+
+function highlightRow(ele)
+{
+	if (ele) {
+		ele.setAttribute("class", "highlight");
+		console.log("highlightRow", ele);
+	}
 }
 
 //
@@ -114,6 +143,7 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 function arrivalPredictionsStatusCb(req)
 {
 	//console.log("arrivalPredictionsStatusCb(", req, ")");
+	displayRequestStatus(arrivalsInfoDiv, req);
 }
 
 function requestArrivalPredictions(id)
@@ -202,6 +232,8 @@ function searchResultCb(status, matchesObj)
 function searchStatusCb(req)
 {
 	//console.log("Search status: readyState", req.readyState, "status", req.status);
+	displayRequestStatus(selectionInfoDiv, req);
+
 }
 
 //
@@ -290,10 +322,18 @@ function displayArrivalsInfo(info)
 		arrivalsInfoDiv.innerHTML = "<p>(No arrivals information)<br>";
 }
 
-
-function onclickStopPoint(id)
+function setStopPointHighlight(ele)
 {
-	console.log("onclickStopPoint: ", id);
+	unhighlightRow(highlightedStopPointRow);
+	highlightRow(ele);
+	highlightedStopPointRow = ele;
+}
+
+function onClickStopPoint(event, id)
+{
+	console.log("onClickStopPoint: ", event, id);
+	var rowEle = event.target.parentNode;
+	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
 	requestArrivalPredictions(id);
 }
@@ -420,7 +460,7 @@ function walkChildren(obj, parent)
 	} else {
 		var info = displayStopPointLeafInfo(obj, parent);
 		if (info.id)
-			s += '<tr onclick="onclickStopPoint(\'' + info.id + '\')">' + info.str + '</tr>';
+			s += '<tr onclick="onClickStopPoint(event, \'' + info.id + '\')">' + info.str + '</tr>';
 	}
 	return s;
 }
@@ -441,10 +481,21 @@ function stopPointResultCb(status, stopPointObj)
 
 function stopPointStatusCb(req)
 {
+	displayRequestStatus(stopPointInfoDiv, req);
 }
 
-function onclickSelectionEvent(event, id)
+function setSelectionHighlight(ele)
 {
+	unhighlightRow(highlightedSelectionRow);
+	highlightRow(ele);
+	highlightedSelectionRow = ele;
+}
+
+function onClickSelectionEvent(event, id)
+{
+	console.log("onClickSelectionEvent", id, event);
+	var rowEle = event.target.parentNode;
+	setSelectionHighlight(rowEle);
 	resetArrivalsDiv();
 	resetStopPointDiv();
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
@@ -469,7 +520,7 @@ function displaySelection(info)
 				modeStr += ', ' + capitalise(mode);
 			}
 		}
-		s += '<tr onclick="onclickSelectionEvent(event, \'' + entry.id + '\')"><td>' + entry.name + "</td><td>" + modeStr + "</td></tr>";
+		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + entry.name + "</td><td>" + modeStr + "</td></tr>";
 	}
 	s += "</table>";
 	selectionInfoDiv.innerHTML = s;
