@@ -6,7 +6,11 @@
 </head>
 <body onload="bodyLoadedEvent(event)">
 <br>
-<span class="info">Search Text:&ensp;</span><input type="text" class="info" name="searchText" onchange="searchOnChange(event)" />
+<span class="info">
+Search Text:&ensp;
+</span>
+<input type="text" class="info" id="searchText"/>
+<input type="button" class="info" id="searchSubmit" value="Submit" onclick="searchSubmitOnClick(event)">
 <br>
 <div id="selectionInfoDiv"></div>
 <div id="stopPointInfoDiv"></div>

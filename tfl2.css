@@ -15,6 +15,10 @@ p, br {
 	padding: 0.3em;
 }
 
+input {
+	font-size: 1.5em;
+}
+
 .info {
 	font-size: 1.5em;
 }

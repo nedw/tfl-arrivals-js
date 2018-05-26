@@ -2,6 +2,7 @@ var busStopInfoDiv = null;
 var arrivalsInfoDiv = null;
 var selectionInfoDiv = null;
 var stopPointInfoDiv = null;
+var searchTextEl = null;
 var displayNightBuses = false;
 var highlightedSelectionRow = null;
 var highlightedStopPointRow = null;
@@ -264,12 +265,20 @@ function searchOnChange(ev)
 	requestTextSearchMatches(ev.target.value);
 }
 
+function searchSubmitOnClick(ev)
+{
+	resetDivs();
+	console.log(searchTextEl.value);
+	requestTextSearchMatches(searchTextEl.value);
+}
+
 function bodyLoadedEvent(event)
 {
 	busStopInfoDiv = document.getElementById("busStopInfoDiv");
 	arrivalsInfoDiv = document.getElementById("arrivalsInfoDiv");
 	selectionInfoDiv = document.getElementById("selectionInfoDiv");
 	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
+	searchTextEl = document.getElementById("searchText");
 }
 
 //
