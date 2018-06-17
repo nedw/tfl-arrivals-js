@@ -170,7 +170,7 @@ function extractLineNames(lines)
 function extractBusStopInfoFromMatches(obj)
 {
 	var ret = [];
-	console.log(obj);
+	console.log("extractBusStopInfoFromMatches(): ",obj);
 	if (obj.matches) {
 		for (var match of obj.matches) {
 			if (!match.id) {
@@ -221,7 +221,11 @@ function searchResultCb(status, matchesObj)
 	if (status == 200) {
 		var info = extractBusStopInfoFromMatches(matchesObj);
 		if (info.length == 1 && info[0].idUsable) {
-			displayBusStopInfo(info[0]);
+			displaySelection(info);
+			resetArrivalsDiv();
+			resetStopPointDiv();
+			stopPointReq.request(getStopPointInfoUrl(info[0].id), stopPointResultCb, stopPointStatusCb);
+			//displayBusStopInfo(info[0]);
 			requestArrivalPredictions(info[0].id);
 		} else {
 			displaySelection(info);
@@ -298,7 +302,6 @@ function displayBusStopInfo(info)
 	if (info.towards) {
 		s += " - " + info.towards;
 	}
-	
 	busStopInfoDiv.innerHTML = s;
 }
 
@@ -378,7 +381,7 @@ function lineIdentifierInfo(obj)
 
 function lineGroupInfo(arr)
 {
-	console.log('lineGroupInfo: ', arr);
+	//console.log('lineGroupInfo: ', arr);
 	var s = '';
 	if (arr.length > 1)
 		alert("lineGroupInfo: more than one entry - taking first");
@@ -529,7 +532,13 @@ function displaySelection(info)
 				modeStr += ', ' + capitalise(mode);
 			}
 		}
-		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + entry.name + "</td><td>" + modeStr + "</td></tr>";
+		if (entry.stopLetter) {
+			modeStr += " (stop " + entry.stopLetter + ")";
+		}
+		var name = entry.name;
+		if (entry.towards)
+			name += "<br>(towards " + entry.towards + ")";
+		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
 	}
 	s += "</table>";
 	selectionInfoDiv.innerHTML = s;
