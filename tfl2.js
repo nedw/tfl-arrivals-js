@@ -1,3 +1,7 @@
+var DEBUG_DISPLAY = 1;
+var DEBUG_REQUEST = 2;
+var debug = 0;
+
 var busStopInfoDiv = null;
 var arrivalsInfoDiv = null;
 var selectionInfoDiv = null;
@@ -7,83 +11,47 @@ var displayNightBuses = false;
 var highlightedSelectionRow = null;
 var highlightedStopPointRow = null;
 
+var lastArrivalRequestId = null;
+
+//
+// HTTP Request instances
+//
+
+var searchReq = null;
+var arrivalsReq = null;
+var stopPointReq = null;
+
 //
 // HTTP request object
 //
 
-var searchReq = {
-	resultCallback: null,
-	statusCallback: null,
+class Request {
+	constructor() {
+	}
 	
-	request: function (url, resultCallback, statusCallback) {
-		this.req = new XMLHttpRequest();
-		//var url = "https://api.tfl.gov.uk/StopPoint/Search/" + text;
-		this.req.onreadystatechange = this.status;
+	request(url, resultCallback, statusCallback) {
 		this.resultCallback = resultCallback;
 		this.statusCallback = statusCallback;
-		this.req.open("GET", url, true);
-		this.req.timeSent = Date.now();
-		this.req.send();
-	},
-	status: function () {
-		// NOTE: status() is called from XMLHTTPRequest() context
-		if (searchReq.req.readyState == 4 && searchReq.req.status == 200) {
-			var obj = JSON.parse(searchReq.req.responseText);
-			searchReq.resultCallback(searchReq.req.status, obj);
-		} else
-			searchReq.statusCallback(searchReq.req);
+		
+		this.httpReq = new XMLHttpRequest();
+		this.httpReq.onreadystatechange = this.status;
+		this.httpReq.req = this;
+		
+		this.httpReq.open("GET", url, true);
+		this.timeSent = Date.now();
+		this.httpReq.send();
 	}
-};
-
-var arrivalsReq = {
-	resultCallback: null,
-	statusCallback: null,
 	
-	request: function (url, resultCallback, statusCallback) {
-		this.req = new XMLHttpRequest();
-		//var url = "https://api.tfl.gov.uk/StopPoint/" + id + "/Arrivals";
-		console.log("arrivalsReq.request(): url", url);
-		this.req.onreadystatechange = this.status;
-		this.resultCallback = resultCallback;
-		this.statusCallback = statusCallback;
-		this.req.open("GET", url, true);
-		this.req.timeSent = Date.now();
-		this.req.send();
-	},
-	status: function () {
+	status() {
 		// NOTE: status() is called from XMLHTTPRequest() context
-		if (arrivalsReq.req.readyState == 4 && arrivalsReq.req.status == 200) {
-			var obj = JSON.parse(arrivalsReq.req.responseText);
-			arrivalsReq.resultCallback(arrivalsReq.req.status, obj);
+		if (this.readyState == 4 && this.status == 200) {
+			var obj = JSON.parse(this.responseText);
+			this.req.resultCallback(this.status, obj);
+			this.req = null;				// reference no longer needed
 		} else
-			arrivalsReq.statusCallback(arrivalsReq.req);
+			this.req.statusCallback(this);
 	}
-};
-
-var stopPointReq = {
-	resultCallback: null,
-	statusCallback: null,
-	
-	request: function (url, resultCallback, statusCallback) {
-		this.req = new XMLHttpRequest();
-		//var url = "https://api.tfl.gov.uk/StopPoint/" + id;
-		console.log("stopPointReq.request(): url", url);
-		this.req.onreadystatechange = this.status;
-		this.resultCallback = resultCallback;
-		this.statusCallback = statusCallback;
-		this.req.open("GET", url, true);
-		this.req.timeSent = Date.now();
-		this.req.send();
-	},
-	status: function () {
-		// NOTE: status() is called from XMLHTTPRequest() context
-		if (stopPointReq.req.readyState == 4 && stopPointReq.req.status == 200) {
-			var obj = JSON.parse(stopPointReq.req.responseText);
-			stopPointReq.resultCallback(stopPointReq.req.status, obj);
-		} else
-			stopPointReq.statusCallback(stopPointReq.req);
-	}
-};
+}
 
 var readyStateNames = [ "", "(Opened)", "(Headers received)", "(Loading)", "(Done)" ];
 
@@ -93,6 +61,10 @@ function displayRequestStatus(div, req)
 		div.innerHTML = "<p>" + readyStateNames[req.readyState];
 	}
 }
+
+//
+// Functions for forming URLs
+//
 
 function getStopPointSearchUrl(text)
 {
@@ -119,7 +91,8 @@ function highlightRow(ele)
 {
 	if (ele) {
 		ele.setAttribute("class", "highlight");
-		console.log("highlightRow", ele);
+		if (debug & DEBUG_DISPLAY)
+			console.log("highlightRow", ele);
 	}
 }
 
@@ -129,11 +102,36 @@ function highlightRow(ele)
 
 function arrivalsError(status)
 {
-	console.log("ArrivalsError(", status, ")");
+	if (debug & DEBUG_REQUEST)
+		console.log("ArrivalsError(", status, ")");
+	setLastArrivalRequestId(null);
+}
+
+function addIdToString(id, s)
+{
+	arr = s.split(',');
+	for (var i = 0 ; i < arr.length ; ++i) {
+		console.log("setIdToString: " + i + ":" + arr[i]);
+	}
+	s += id + ",";
+	console.log("setIdToString: s",s);
+	return s;
+}
+
+function setLastArrivalRequestId(id)
+{
+	lastArrivalRequestId = id;
+	/* localStorage */
+}
+
+function getLastArrivalRequestId()
+{
+	return lastArrivalRequestId;
 }
 
 function arrivalPredictionsResultCb(status, arrivalsObj)
 {
+	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
 		displayArrivalsInfo(arrivalsObj);
 	} else {
@@ -149,14 +147,22 @@ function arrivalPredictionsStatusCb(req)
 
 function requestArrivalPredictions(id)
 {
+	setLastArrivalRequestId(id);
+	arrivalsReq = new Request();
 	arrivalsReq.request(getStopPointArrivalsUrl(id), arrivalPredictionsResultCb, arrivalPredictionsStatusCb);
+}
+
+function requestStopPointInfo(id)
+{
+	stopPointReq = new Request();
+	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 
 //
 // Search functionality and callbacks
 //
 
-function extractLineNames(lines)
+function getLineNames(lines)
 {
 	var names = [];
 	for (var l of lines) {
@@ -167,64 +173,71 @@ function extractLineNames(lines)
 	return names;
 }
 
-function extractBusStopInfoFromMatches(obj)
+function getInfoFromSearchMatches(obj)
 {
 	var ret = [];
-	console.log("extractBusStopInfoFromMatches(): ",obj);
+	if (debug & DEBUG_REQUEST)
+		console.log("getInfoFromSearchMatches: obj", obj);
 	if (obj.matches) {
 		for (var match of obj.matches) {
 			if (!match.id) {
-				console.log("extractBusStopInfoFromMatches(): id not in match");
+				console.log("getInfoFromSearchMatches(): id not in match");
 			} else {
-				var obj = {};
-				obj.id = match.id;
+				var info = {};
+				info.id = match.id;
 				if (match.towards) {
-					obj.towards = match.towards;
+					info.towards = match.towards;
 				}
 				if (match.name) {
-					obj.name = match.name;
+					info.name = match.name;
 				}
 				if (match.stopLetter) {
-					obj.stopLetter = match.stopLetter;
+					info.stopLetter = match.stopLetter;
 				}
 				if (match.lines && match.lines.length > 0) {
-					obj.lines = extractLineNames(match.lines);
+					info.lines = getLineNames(match.lines);
 				}
 				if (match.modes && match.modes.length > 0) {
-					obj.modes = match.modes;
+					info.modes = match.modes;
 				}
 				
 				/* hack - we assume this mismatch means we can use "id" directly as arrivals id */
 				if (match.topMostParentId && match.topMostParentId != match.id)
-					obj.idUsable = true;
+					info.idUsable = true;
 				else
-					obj.idUsable = false;
-				ret.push(obj);
+					info.idUsable = false;
+				ret.push(info);
 			}
 		}
 	}
+	if (debug & DEBUG_REQUEST)
+		console.log("getInfoFromSearchMatches: ret", ret);
 	return ret;
 }
 
 function requestTextSearchMatches(text)
 {
+	searchReq = new Request();
 	searchReq.request(getStopPointSearchUrl(text), searchResultCb, searchStatusCb);
 }
 
 function searchError(status)
 {
-	console.log("searchError(", status, ")");
+	if (debug & DEBUG_REQUEST)
+		console.log("searchError(", status, ")");
 }
 
 function searchResultCb(status, matchesObj)
 {
+	searchReq = null;				// reference no longer required
+
 	if (status == 200) {
-		var info = extractBusStopInfoFromMatches(matchesObj);
+		var info = getInfoFromSearchMatches(matchesObj);	// info is an array
 		if (info.length == 1 && info[0].idUsable) {
 			displaySelection(info);
 			resetArrivalsDiv();
 			resetStopPointDiv();
-			stopPointReq.request(getStopPointInfoUrl(info[0].id), stopPointResultCb, stopPointStatusCb);
+			requestStopPointInfo(info[0].id);
 			//displayBusStopInfo(info[0]);
 			requestArrivalPredictions(info[0].id);
 		} else {
@@ -305,7 +318,7 @@ function displayBusStopInfo(info)
 	busStopInfoDiv.innerHTML = s;
 }
 
-function timeToStationStr(t)
+function formatTimeToStationStr(t)
 {
 	var min = Math.floor(t/60);
 	var sec = t - (min * 60);
@@ -316,22 +329,33 @@ function timeToStationStr(t)
 
 function displayArrivalsInfo(info)
 {
-	console.log("displayArrivalsInfo: ", info);
+	if (debug & DEBUG_REQUEST)
+		console.log("displayArrivalsInfo: ", info);
+	var s = "";
 	if (info.length > 0) {
-		var s = '<br><table border="1">';
+		s = '<br><table border="1">';
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
 		for (var entry of info) {
 			var dest = entry.destinationName ? entry.destinationName : '';
-			s += "<tr><td>" + entry.lineName + "</td><td>" + dest + "</td><td>" + timeToStationStr(entry.timeToStation + 0) + "</td>";
+			s += "<tr><td>" + entry.lineName + "</td><td>" + dest + "</td><td>" + formatTimeToStationStr(entry.timeToStation + 0) + "</td>";
 			if (entry.modeName && entry.modeName == "tube") {
 				s += "<td>" + (entry.currentLocation ? entry.currentLocation : "") + "</td>";
 				s += "<td>" + (entry.platformName ? entry.platformName : "") + "</td>";
 			}
 		}
 		s += "</table>";
-		arrivalsInfoDiv.innerHTML = s;
 	} else
-		arrivalsInfoDiv.innerHTML = "<p>(No arrivals information)<br>";
+		s = "<p>(No arrivals information)<br>";
+	s += '<input type="button" class="info" id="arrivalsRefresh" onclick="onClickArrivalsRefresh()" value="Submit" />';
+	arrivalsInfoDiv.innerHTML = s;
+}
+
+function onClickArrivalsRefresh()
+{
+	id = getLastArrivalRequestId();
+	if (id) {
+		requestArrivalPredictions(id);
+	}
 }
 
 function setStopPointHighlight(ele)
@@ -343,7 +367,8 @@ function setStopPointHighlight(ele)
 
 function onClickStopPoint(event, id)
 {
-	console.log("onClickStopPoint: ", event, id);
+	if (debug & DEBUG_REQUEST)
+		console.log("onClickStopPoint: ", event, id);
 	var rowEle = event.target.parentNode;
 	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
@@ -362,7 +387,7 @@ function capitalise(s)
 		return s;
 }
 
-function lineIdentifierInfo(obj)
+function formatLineIdentifierInfo(obj)
 {
 	var s = '';
 	var first = true;
@@ -379,12 +404,12 @@ function lineIdentifierInfo(obj)
 	return s;
 }
 
-function lineGroupInfo(arr)
+function formatLineGroupInfo(arr)
 {
-	//console.log('lineGroupInfo: ', arr);
+	//console.log('formatLineGroupInfo: ', arr);
 	var s = '';
 	if (arr.length > 1)
-		alert("lineGroupInfo: more than one entry - taking first");
+		alert("formatLineGroupInfo: more than one entry - taking first");
 	obj = arr[0];
 	if (obj.lineIdentifier && obj.lineIdentifier.length > 0) {
 		var arrivalsId;
@@ -392,13 +417,13 @@ function lineGroupInfo(arr)
 			arrivalsId = obj.naptanIdReference;
 		else
 			arrivalsId = obj.stationAtcoCode ? obj.stationAtcoCode : '';
-		s = lineIdentifierInfo(obj);
+		s = formatLineIdentifierInfo(obj);
 	}
 	return { str: s, id: arrivalsId };
 	
 }
 
-function parseAdditionalProperties(obj)
+function getAdditionalProperties(obj)
 {
 	var info = {};
 	if (obj.additionalProperties && obj.additionalProperties.length > 0) {
@@ -431,27 +456,91 @@ function parseAdditionalProperties(obj)
 	return info;
 }
 
-function displayStopPointLeafInfo(obj, parent)
+function getStopPointLeafInfo(obj, parent)
 {
-	console.log('displayStopPointLeafInfo: ', obj);
+	var info = {};
+
+	if (obj.lines && obj.lines.length > 0) {
+		if (obj.stopLetter)
+			info.stopName = "Stop " + obj.stopLetter;
+		else
+		if (parent && parent.commonName)
+			info.stopName = parent.commonName;
+		else
+			info.stopName = "";
+
+		var props = getAdditionalProperties(obj);
+		if (props.towards)
+			info.dir = props.towards;
+		else
+		if (props.direction)
+			info.dir = props.direction;
+
+		info.lines = [];
+		for (var line of obj.lines) {
+			if (line.name)
+				info.lines.push(line.name);
+			else
+			if (line.id)
+				info.lines.push(line.id);
+		}
+		
+		if (obj.naptanId)
+			info.id = obj.naptanId;
+		else
+		if (obj.id)
+			info.id = obj.id;
+		else
+		if (obj.stationNaptan)
+			info.id = obj.stationNaptan;
+		else
+			info.id = null;			// what to do here if there is no id ?
+	}
+	if (debug & DEBUG_REQUEST)
+		console.log("getStopPointLeafInfo: ", info);
+	return info;
+}
+
+function formatStopPointLeafInfo2(obj, parent)
+{
+	if (debug & DEBUG_REQUEST)
+		console.log('formatStopPointLeafInfo2: ', obj);
+	var info = getStopPointLeafInfo(obj, parent);
+	var s = "";
+	s += '<td>' + info.stopName;
+	s += '<td>';
+	if (info.lines)
+		s += info.lines.join(', ');
+	s += '<td>';
+	if (info.dir)
+		s += info.dir;
+	return { str: s, id: info.id };
+}
+
+function formatStopPointLeafInfo(obj, parent)
+{
+	return formatStopPointLeafInfo2(obj, parent)
+	if (debug & DEBUG_REQUEST)
+		console.log('formatStopPointLeafInfo: ', obj);
 	var s = "";
 	var arrivalsId = null;
+	var info = getStopPointLeafInfo(obj, parent);
 	if (obj.lineGroup && obj.lineGroup.length > 0) {
 		if (obj.stopLetter)
 			s += '<td>Stop ' + obj.stopLetter;
 		else {
 			if (parent && parent.commonName) {
-				console.log("Parent =", parent);
+				if (debug & DEBUG_REQUEST)
+					console.log("formatStopPointLeafInfo: parent =", parent);
 				s += '<td>' + parent.commonName;
 			} else
 				s += '<td>';
 		}
-		var info = lineGroupInfo(obj.lineGroup);
+		var info = formatLineGroupInfo(obj.lineGroup);
 		s += '</td><td>' + info.str + '</td><td>';
 		arrivalsId = info.id;
 
-		var props = parseAdditionalProperties(obj);
-		var first = true;
+		var props = getAdditionalProperties(obj);
 		
 		if (props.towards) {
 			s += props.towards;
@@ -470,7 +559,7 @@ function walkChildren(obj, parent)
 			s += walkChildren(child, obj);
 		}
 	} else {
-		var info = displayStopPointLeafInfo(obj, parent);
+		var info = formatStopPointLeafInfo(obj, parent);
 		if (info.id)
 			s += '<tr onclick="onClickStopPoint(event, \'' + info.id + '\')">' + info.str + '</tr>';
 	}
@@ -479,7 +568,8 @@ function walkChildren(obj, parent)
 
 function displayStopPointInfo(obj)
 {
-	console.log("displayStopPointInfo: ", obj);
+	if (debug & DEBUG_REQUEST)
+		console.log("displayStopPointInfo: ", obj);
 	var s = '<br><table border="1">';
 	s += walkChildren(obj, obj);
 	s += '</table>';
@@ -488,6 +578,7 @@ function displayStopPointInfo(obj)
 
 function stopPointResultCb(status, stopPointObj)
 {
+	stopPointReq = null;				// reference no longer needed
 	displayStopPointInfo(stopPointObj);
 }
 
@@ -505,11 +596,14 @@ function setSelectionHighlight(ele)
 
 function onClickSelectionEvent(event, id)
 {
-	console.log("onClickSelectionEvent", id, event);
+	if (debug & DEBUG_REQUEST)
+		console.log("onClickSelectionEvent", id, event);
 	var rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
 	resetArrivalsDiv();
 	resetStopPointDiv();
+
+	stopPointReq = new Request();
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 
@@ -519,7 +613,8 @@ function onClickSelectionEvent(event, id)
 
 function displaySelection(info)
 {
-	console.log("displaySelection: ", info);
+	if (debug & DEBUG_REQUEST)
+		console.log("displaySelection: ", info);
 	var s = '<br><table border="1">';
 	for (var entry of info) {
 		var modeStr = "";
