@@ -1,5 +1,38 @@
+//
+// NOTES:
+// Shepherds Bush Central line Stop Point information contains:
+//		id: 9400ZZLUSBC1
+//		lines: central
+//		modes: tube
+//		naptanId: 9400ZZLUSBC1
+//		stationNaptan: 940GZZLUSBC
+//		stopType: NaptanMetroPlatform
+//
+// and arrivals can be retrieved via:
+//
+//		https://api.tfl.gov.uk/StopPoint/940GZZLUSBC/Arrivals
+//		https://api.tfl.gov.uk/Line/central/Arrivals/?stopPointId=940GZZLUSBC
+//
+// Hammersmith District line Stop Point information contains:
+//
+//		id: 9400ZZLUHSD1
+//		lines: district
+//		modes: tube
+//		naptanId: 9400ZZLUHSD1
+//		stationNaptan: 940GZZLUHSD
+//		stopType: NaptanMetroPlatform
+//	
+// and arrivals can be retrieved via:
+//
+//		https://api.tfl.gov.uk/StopPoint/940GZZLUHSD/Arrivals
+//		https://api.tfl.gov.uk/Line/district/Arrivals/?stopPointId=940GZZLUHSD
+//
+// Hammersmith H&C and Circle doesn't work
+
+
 var DEBUG_DISPLAY = 1;
 var DEBUG_REQUEST = 2;
+var DEBUG_PARSE = 4;
 var debug = 0;
 
 var busStopInfoDiv = null;
@@ -91,8 +124,6 @@ function highlightRow(ele)
 {
 	if (ele) {
 		ele.setAttribute("class", "highlight");
-		if (debug & DEBUG_DISPLAY)
-			console.log("highlightRow", ele);
 	}
 }
 
@@ -131,6 +162,8 @@ function getLastArrivalRequestId()
 
 function arrivalPredictionsResultCb(status, arrivalsObj)
 {
+	if (debug & DEBUG_REQUEST)
+		console.log("arrivalPredictionsResultCb", arrivalsObj);
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
 		displayArrivalsInfo(arrivalsObj);
@@ -147,6 +180,8 @@ function arrivalPredictionsStatusCb(req)
 
 function requestArrivalPredictions(id)
 {
+	if (debug & DEBUG_REQUEST)
+		console.log("requestArrivalPredictions: id", id);
 	setLastArrivalRequestId(id);
 	arrivalsReq = new Request();
 	arrivalsReq.request(getStopPointArrivalsUrl(id), arrivalPredictionsResultCb, arrivalPredictionsStatusCb);
@@ -158,8 +193,29 @@ function requestStopPointInfo(id)
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 
+/********************
+ * Search functions *
+ ********************/
+ 
 //
-// Search functionality and callbacks
+// Search HTML callbacks
+//
+
+function searchOnChange(ev)
+{
+	resetDivs();
+	requestTextSearchMatches(ev.target.value);
+}
+
+function searchSubmitOnClick(ev)
+{
+	resetDivs();
+	console.log(searchTextEl.value);
+	requestTextSearchMatches(searchTextEl.value);
+}
+
+//
+// Search result parsing
 //
 
 function getLineNames(lines)
@@ -211,9 +267,13 @@ function getInfoFromSearchMatches(obj)
 		}
 	}
 	if (debug & DEBUG_REQUEST)
-		console.log("getInfoFromSearchMatches: ret", ret);
+		console.log("getInfoFromSearchMatches: return", ret);
 	return ret;
 }
+
+//
+// Search requests and callbacks
+//
 
 function requestTextSearchMatches(text)
 {
@@ -234,14 +294,14 @@ function searchResultCb(status, matchesObj)
 	if (status == 200) {
 		var info = getInfoFromSearchMatches(matchesObj);	// info is an array
 		if (info.length == 1 && info[0].idUsable) {
-			displaySelection(info);
+			displaySearchSelection(info);
 			resetArrivalsDiv();
 			resetStopPointDiv();
 			requestStopPointInfo(info[0].id);
 			//displayBusStopInfo(info[0]);
 			requestArrivalPredictions(info[0].id);
 		} else {
-			displaySelection(info);
+			displaySearchSelection(info);
 		}
 	} else
 		searchError(status);
@@ -252,6 +312,35 @@ function searchStatusCb(req)
 	//console.log("Search status: readyState", req.readyState, "status", req.status);
 	displayRequestStatus(selectionInfoDiv, req);
 
+}
+//
+// Search display formatting
+//
+
+function displaySearchSelection(info)
+{
+	var s = '<br><table border="1">';
+	for (var entry of info) {
+		var modeStr = "";
+		var first = true;
+		for (var mode of entry.modes) {
+			if (first) {
+				modeStr = capitalise(mode);
+				first = false;
+			} else {
+				modeStr += ', ' + capitalise(mode);
+			}
+		}
+		if (entry.stopLetter) {
+			modeStr += " (stop " + entry.stopLetter + ")";
+		}
+		var name = entry.name;
+		if (entry.towards)
+			name += "<br>(towards " + entry.towards + ")";
+		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
+	}
+	s += "</table>";
+	selectionInfoDiv.innerHTML = s;
 }
 
 //
@@ -274,19 +363,6 @@ function resetDivs()
 	selectionInfoDiv.innerHTML = "";
 	resetStopPointDiv();
 	resetArrivalsDiv();
-}
-
-function searchOnChange(ev)
-{
-	resetDivs();
-	requestTextSearchMatches(ev.target.value);
-}
-
-function searchSubmitOnClick(ev)
-{
-	resetDivs();
-	console.log(searchTextEl.value);
-	requestTextSearchMatches(searchTextEl.value);
 }
 
 function bodyLoadedEvent(event)
@@ -375,8 +451,12 @@ function onClickStopPoint(event, id)
 	requestArrivalPredictions(id);
 }
 
+/*****************************
+ * Leaf Stop Point Functions *
+ *****************************/
+
 //
-// Display StopPoint info
+// Leaf Stop Point result parsing
 //
 
 function capitalise(s)
@@ -485,6 +565,9 @@ function getStopPointLeafInfo(obj, parent)
 				info.lines.push(line.id);
 		}
 		
+		if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
+			info.id = obj.stationNaptan;
+		else
 		if (obj.naptanId)
 			info.id = obj.naptanId;
 		else
@@ -496,12 +579,14 @@ function getStopPointLeafInfo(obj, parent)
 		else
 			info.id = null;			// what to do here if there is no id ?
 	}
-	if (debug & DEBUG_REQUEST)
-		console.log("getStopPointLeafInfo: ", info);
 	return info;
 }
 
-function formatStopPointLeafInfo2(obj, parent)
+//
+// Leaf Stop Point display formatting
+//
+
+function formatStopPointLeafInfo(obj, parent)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log('formatStopPointLeafInfo2: ', obj);
@@ -517,9 +602,8 @@ function formatStopPointLeafInfo2(obj, parent)
 	return { str: s, id: info.id };
 }
 
-function formatStopPointLeafInfo(obj, parent)
+function formatStopPointLeafInfo_unused(obj, parent)
 {
-	return formatStopPointLeafInfo2(obj, parent)
 	if (debug & DEBUG_REQUEST)
 		console.log('formatStopPointLeafInfo: ', obj);
 	var s = "";
@@ -559,10 +643,50 @@ function walkChildren(obj, parent)
 			s += walkChildren(child, obj);
 		}
 	} else {
-		var info = formatStopPointLeafInfo(obj, parent);
+		var info = formatStopPointLeafInfo(obj, parent)
 		if (info.id)
 			s += '<tr onclick="onClickStopPoint(event, \'' + info.id + '\')">' + info.str + '</tr>';
 	}
+	return s;
+}
+
+function getStopPointInfo(obj)
+{
+	var info = [];
+	getStopPointInfo_recurse(obj, null, info);
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: return info", info);
+	return info;
+}
+
+function getStopPointInfo_recurse(obj, parent, result)
+{
+	if (obj.children && obj.children.length > 0) {
+		for (var child of obj.children) {
+			getStopPointInfo_recurse(child, obj, result);
+		}
+	} else {
+		var leaf_info = getStopPointLeafInfo(obj, parent);
+		if (leaf_info.id) {
+			result.push(leaf_info);
+		}
+	}
+}
+
+function formatStopPointInfo(info)
+{
+	var s = '<br><table border="1">';
+	for (var stop of info) {
+		s += '<tr onclick="onClickStopPoint(event, \'' + stop.id + '\')">';
+		s += '<td>' + stop.stopName;
+		s += '<td>';
+		if (stop.lines)
+			s += stop.lines.join(', ');
+		s += '<td>';
+		if (stop.dir)
+			s += stop.dir;
+	}
+	s += '</table>';
 	return s;
 }
 
@@ -570,11 +694,27 @@ function displayStopPointInfo(obj)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("displayStopPointInfo: ", obj);
+	var info = getStopPointInfo(obj);
+	var s = formatStopPointInfo(info);
+	stopPointInfoDiv.innerHTML = s;
+	return;
+
 	var s = '<br><table border="1">';
 	s += walkChildren(obj, obj);
 	s += '</table>';
 	stopPointInfoDiv.innerHTML = s;
 }
+
+function setSelectionHighlight(ele)
+{
+	unhighlightRow(highlightedSelectionRow);
+	highlightRow(ele);
+	highlightedSelectionRow = ele;
+}
+
+//
+// Leaf Stop Point request and callbacks
+//
 
 function stopPointResultCb(status, stopPointObj)
 {
@@ -585,13 +725,6 @@ function stopPointResultCb(status, stopPointObj)
 function stopPointStatusCb(req)
 {
 	displayRequestStatus(stopPointInfoDiv, req);
-}
-
-function setSelectionHighlight(ele)
-{
-	unhighlightRow(highlightedSelectionRow);
-	highlightRow(ele);
-	highlightedSelectionRow = ele;
 }
 
 function onClickSelectionEvent(event, id)
@@ -607,34 +740,3 @@ function onClickSelectionEvent(event, id)
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 
-//
-// Display match info
-//
-
-function displaySelection(info)
-{
-	if (debug & DEBUG_REQUEST)
-		console.log("displaySelection: ", info);
-	var s = '<br><table border="1">';
-	for (var entry of info) {
-		var modeStr = "";
-		var first = true;
-		for (var mode of entry.modes) {
-			if (first) {
-				modeStr = capitalise(mode);
-				first = false;
-			} else {
-				modeStr += ', ' + capitalise(mode);
-			}
-		}
-		if (entry.stopLetter) {
-			modeStr += " (stop " + entry.stopLetter + ")";
-		}
-		var name = entry.name;
-		if (entry.towards)
-			name += "<br>(towards " + entry.towards + ")";
-		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
-	}
-	s += "</table>";
-	selectionInfoDiv.innerHTML = s;
-}
