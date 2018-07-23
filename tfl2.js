@@ -232,7 +232,7 @@ function getLineNames(lines)
 function getInfoFromSearchMatches(obj)
 {
 	var ret = [];
-	if (debug & DEBUG_REQUEST)
+	if (debug & DEBUG_PARSE)
 		console.log("getInfoFromSearchMatches: obj", obj);
 	if (obj.matches) {
 		for (var match of obj.matches) {
@@ -266,7 +266,7 @@ function getInfoFromSearchMatches(obj)
 			}
 		}
 	}
-	if (debug & DEBUG_REQUEST)
+	if (debug & DEBUG_PARSE)
 		console.log("getInfoFromSearchMatches: return", ret);
 	return ret;
 }
@@ -337,7 +337,7 @@ function displaySearchSelection(info)
 		var name = entry.name;
 		if (entry.towards)
 			name += "<br>(towards " + entry.towards + ")";
-		s += '<tr onclick="onClickSelectionEvent(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
+		s += '<tr onclick="searchOnClick(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
 	}
 	s += "</table>";
 	selectionInfoDiv.innerHTML = s;
@@ -422,11 +422,11 @@ function displayArrivalsInfo(info)
 		s += "</table>";
 	} else
 		s = "<p>(No arrivals information)<br>";
-	s += '<input type="button" class="info" id="arrivalsRefresh" onclick="onClickArrivalsRefresh()" value="Submit" />';
+	s += '<input type="button" class="info" id="arrivalsRefresh" onclick="arrivalsRequestOnClick()" value="Submit" />';
 	arrivalsInfoDiv.innerHTML = s;
 }
 
-function onClickArrivalsRefresh()
+function arrivalsRequestOnClick()
 {
 	id = getLastArrivalRequestId();
 	if (id) {
@@ -441,10 +441,10 @@ function setStopPointHighlight(ele)
 	highlightedStopPointRow = ele;
 }
 
-function onClickStopPoint(event, id)
+function stopPointOnClick(event, id)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("onClickStopPoint: ", event, id);
+		console.log("stopPointOnClick: ", id);
 	var rowEle = event.target.parentNode;
 	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
@@ -556,13 +556,14 @@ function getStopPointLeafInfo(obj, parent)
 		if (props.direction)
 			info.dir = props.direction;
 
+		// TODO - rename "lines" and "ids"
 		info.lines = [];
+		info.ids = [];
 		for (var line of obj.lines) {
 			if (line.name)
 				info.lines.push(line.name);
-			else
 			if (line.id)
-				info.lines.push(line.id);
+				info.ids.push(line.id);
 		}
 		
 		if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
@@ -582,76 +583,10 @@ function getStopPointLeafInfo(obj, parent)
 	return info;
 }
 
-//
-// Leaf Stop Point display formatting
-//
-
-function formatStopPointLeafInfo(obj, parent)
-{
-	if (debug & DEBUG_REQUEST)
-		console.log('formatStopPointLeafInfo2: ', obj);
-	var info = getStopPointLeafInfo(obj, parent);
-	var s = "";
-	s += '<td>' + info.stopName;
-	s += '<td>';
-	if (info.lines)
-		s += info.lines.join(', ');
-	s += '<td>';
-	if (info.dir)
-		s += info.dir;
-	return { str: s, id: info.id };
-}
-
-function formatStopPointLeafInfo_unused(obj, parent)
-{
-	if (debug & DEBUG_REQUEST)
-		console.log('formatStopPointLeafInfo: ', obj);
-	var s = "";
-	var arrivalsId = null;
-	var info = getStopPointLeafInfo(obj, parent);
-	if (obj.lineGroup && obj.lineGroup.length > 0) {
-		if (obj.stopLetter)
-			s += '<td>Stop ' + obj.stopLetter;
-		else {
-			if (parent && parent.commonName) {
-				if (debug & DEBUG_REQUEST)
-					console.log("formatStopPointLeafInfo: parent =", parent);
-				s += '<td>' + parent.commonName;
-			} else
-				s += '<td>';
-		}
-		var info = formatLineGroupInfo(obj.lineGroup);
-		s += '</td><td>' + info.str + '</td><td>';
-		arrivalsId = info.id;
-
-		var props = getAdditionalProperties(obj);
-		
-		if (props.towards) {
-			s += props.towards;
-		} else
-		if (props.direction)
-			s += props.direction;
-	}
-	return { str: s, id: arrivalsId };
-}
-
-function walkChildren(obj, parent)
-{
-	var s = "";
-	if (obj.children && obj.children.length > 0) {
-		for (var child of obj.children) {
-			s += walkChildren(child, obj);
-		}
-	} else {
-		var info = formatStopPointLeafInfo(obj, parent)
-		if (info.id)
-			s += '<tr onclick="onClickStopPoint(event, \'' + info.id + '\')">' + info.str + '</tr>';
-	}
-	return s;
-}
-
 function getStopPointInfo(obj)
 {
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: obj", obj);
 	var info = [];
 	getStopPointInfo_recurse(obj, null, info);
 	if (debug & DEBUG_PARSE)
@@ -667,17 +602,51 @@ function getStopPointInfo_recurse(obj, parent, result)
 		}
 	} else {
 		var leaf_info = getStopPointLeafInfo(obj, parent);
-		if (leaf_info.id) {
+		if (leaf_info.id && !isDuplicate(result, leaf_info)) {
 			result.push(leaf_info);
 		}
 	}
 }
 
+function compareEqual(obj1, obj2)
+{
+	for (var n in obj1) {
+		if (!(n in obj2)) {
+			return false;
+		}
+		if (typeof(obj1[n]) == "object") {
+			if (!compareEqual(obj1[n], obj2[n])) {
+				return false;
+			}
+		} else
+		if (obj1[n] != obj2[n]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function isDuplicate(list, obj)
+{
+	for (var i = 0 ; i < list.length; ++i) {
+		if (compareEqual(list[i], obj)) {
+			if (debug & DEBUG_PARSE)
+				console.log("isDuplicate:", obj);
+			return true;
+		}
+	}
+	return false;
+}
+
+//
+// Leaf Stop Point display formatting
+//
+
 function formatStopPointInfo(info)
 {
 	var s = '<br><table border="1">';
 	for (var stop of info) {
-		s += '<tr onclick="onClickStopPoint(event, \'' + stop.id + '\')">';
+		s += '<tr onclick="stopPointOnClick(event, \'' + stop.id + '\')">';
 		s += '<td>' + stop.stopName;
 		s += '<td>';
 		if (stop.lines)
@@ -692,16 +661,10 @@ function formatStopPointInfo(info)
 
 function displayStopPointInfo(obj)
 {
-	if (debug & DEBUG_REQUEST)
+	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", obj);
 	var info = getStopPointInfo(obj);
 	var s = formatStopPointInfo(info);
-	stopPointInfoDiv.innerHTML = s;
-	return;
-
-	var s = '<br><table border="1">';
-	s += walkChildren(obj, obj);
-	s += '</table>';
 	stopPointInfoDiv.innerHTML = s;
 }
 
@@ -727,10 +690,10 @@ function stopPointStatusCb(req)
 	displayRequestStatus(stopPointInfoDiv, req);
 }
 
-function onClickSelectionEvent(event, id)
+function searchOnClick(event, id)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("onClickSelectionEvent", id, event);
+		console.log("searchOnClick", id);
 	var rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
 	resetArrivalsDiv();
