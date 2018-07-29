@@ -29,7 +29,6 @@
 //
 // Hammersmith H&C and Circle doesn't work
 
-
 var DEBUG_DISPLAY = 1;
 var DEBUG_REQUEST = 2;
 var DEBUG_PARSE = 4;
@@ -44,7 +43,8 @@ var displayNightBuses = false;
 var highlightedSelectionRow = null;
 var highlightedStopPointRow = null;
 
-var lastArrivalRequestId = null;
+var currentArrivalRequestId = null;
+var currentStopPointInfo = null;
 
 //
 // HTTP Request instances
@@ -135,7 +135,7 @@ function arrivalsError(status)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("ArrivalsError(", status, ")");
-	setLastArrivalRequestId(null);
+	setCurrentArrivalRequestId(null);
 }
 
 function addIdToString(id, s)
@@ -149,15 +149,15 @@ function addIdToString(id, s)
 	return s;
 }
 
-function setLastArrivalRequestId(id)
+function setCurrentArrivalRequestId(id)
 {
-	lastArrivalRequestId = id;
+	currentArrivalRequestId = id;
 	/* localStorage */
 }
 
-function getLastArrivalRequestId()
+function getcurrentArrivalRequestId()
 {
-	return lastArrivalRequestId;
+	return currentArrivalRequestId;
 }
 
 function arrivalPredictionsResultCb(status, arrivalsObj)
@@ -182,7 +182,7 @@ function requestArrivalPredictions(id)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("requestArrivalPredictions: id", id);
-	setLastArrivalRequestId(id);
+	setCurrentArrivalRequestId(id);
 	arrivalsReq = new Request();
 	arrivalsReq.request(getStopPointArrivalsUrl(id), arrivalPredictionsResultCb, arrivalPredictionsStatusCb);
 }
@@ -285,6 +285,7 @@ function searchError(status)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("searchError(", status, ")");
+	selectionInfoDiv.innerHTML = "<b>Search Error " + status;
 }
 
 function searchResultCb(status, matchesObj)
@@ -428,7 +429,7 @@ function displayArrivalsInfo(info)
 
 function arrivalsRequestOnClick()
 {
-	id = getLastArrivalRequestId();
+	id = getcurrentArrivalRequestId();
 	if (id) {
 		requestArrivalPredictions(id);
 	}
@@ -663,8 +664,7 @@ function displayStopPointInfo(obj)
 {
 	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", obj);
-	var info = getStopPointInfo(obj);
-	var s = formatStopPointInfo(info);
+	var s = formatStopPointInfo(obj);
 	stopPointInfoDiv.innerHTML = s;
 }
 
@@ -681,8 +681,15 @@ function setSelectionHighlight(ele)
 
 function stopPointResultCb(status, stopPointObj)
 {
-	stopPointReq = null;				// reference no longer needed
-	displayStopPointInfo(stopPointObj);
+	if (status == 200) {
+		stopPointReq = null;			// reference no longer needed
+		var info = getStopPointInfo(stopPointObj);
+		currentStopPointInfo = info;	// save away stop point list
+		displayStopPointInfo(info);
+	} else {
+		stopPointInfoDiv.innerHTML = "Stop Point Error " + status;
+		currentStopPointInfo = null;
+	}
 }
 
 function stopPointStatusCb(req)
