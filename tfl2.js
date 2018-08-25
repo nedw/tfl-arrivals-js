@@ -116,6 +116,10 @@ function getStopPointArrivalsUrl(id)
 	return getStopPointInfoUrl(id) + "/Arrivals";
 }
 
+//
+// Table row highlighting
+//
+
 function unhighlightRow(ele)
 {
 	if (ele) {
@@ -130,6 +134,14 @@ function highlightRow(ele)
 	}
 }
 
+function setSelectionHighlight(ele)
+{
+	unhighlightRow(highlightedSelectionRow);
+	highlightRow(ele);
+	highlightedSelectionRow = ele;
+}
+
+
 //
 // Arrival predictions functionality and callbacks
 //
@@ -139,17 +151,6 @@ function arrivalsError(status)
 	if (debug & DEBUG_REQUEST)
 		console.log("ArrivalsError(", status, ")");
 	setCurrentArrivalRequestId(null);
-}
-
-function addIdToString(id, s)
-{
-	arr = s.split(',');
-	for (var i = 0 ; i < arr.length ; ++i) {
-		console.log("setIdToString: " + i + ":" + arr[i]);
-	}
-	s += id + ",";
-	console.log("setIdToString: s",s);
-	return s;
 }
 
 function setCurrentArrivalRequestId(id)
@@ -198,10 +199,6 @@ function requestStopPointInfo(id)
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 
-/********************
- * Search functions *
- ********************/
- 
 //
 // Search HTML callbacks
 //
@@ -321,49 +318,12 @@ function stopPointOnClick(event, id)
 	requestArrivalPredictions(id);
 }
 
-function compareEqual(obj1, obj2)
-{
-	for (var n in obj1) {
-		if (!(n in obj2)) {
-			return false;
-		}
-		if (typeof(obj1[n]) == "object") {
-			if (!compareEqual(obj1[n], obj2[n])) {
-				return false;
-			}
-		} else
-		if (obj1[n] != obj2[n]) {
-			return false;
-		}
-	}
-	return true;
-}
-
-function isDuplicate(list, obj)
-{
-	for (var i = 0 ; i < list.length; ++i) {
-		if (compareEqual(list[i], obj)) {
-			if (debug & DEBUG_PARSE)
-				console.log("isDuplicate:", obj);
-			return true;
-		}
-	}
-	return false;
-}
-
 function displayStopPointInfo(obj)
 {
 	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", obj);
 	var s = formatStopPointInfo(obj);
 	stopPointInfoDiv.innerHTML = s;
-}
-
-function setSelectionHighlight(ele)
-{
-	unhighlightRow(highlightedSelectionRow);
-	highlightRow(ele);
-	highlightedSelectionRow = ele;
 }
 
 //
