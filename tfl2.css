@@ -1,12 +1,16 @@
 table {
-	border: 1px solid black;
 	border-collapse: collapse;
+}
+
+td {
+	border: 1px solid black;
 }
 
 table, tr, td {
 	font-size: 1.25em;
 	margin: 1em;
 	padding: 0.3em;
+	border: 1px solid black;
 }
 
 p, br {
@@ -26,4 +30,10 @@ input {
 .highlight {
 	font-weight: bold;
 }
+
+td.selectClass {
+	display: none;
+}
+
+
 

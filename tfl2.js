@@ -29,10 +29,12 @@
 //
 // Hammersmith H&C and Circle doesn't work
 
-var DEBUG_DISPLAY = 1;
-var DEBUG_REQUEST = 2;
-var DEBUG_PARSE = 4;
-var debug = 0;
+const DEBUG_DISPLAY = 1;
+const DEBUG_REQUEST = 2;
+const DEBUG_PARSE = 4;
+const debug = 0;
+
+const CLASS_HIGHLIGHT = "highlight";
 
 var busStopInfoDiv = null;
 var arrivalsInfoDiv = null;
@@ -116,14 +118,15 @@ function getStopPointArrivalsUrl(id)
 
 function unhighlightRow(ele)
 {
-	if (ele)
-		ele.setAttribute("class", "");
+	if (ele) {
+		ele.classList.remove(CLASS_HIGHLIGHT);
+	}
 }
 
 function highlightRow(ele)
 {
 	if (ele) {
-		ele.setAttribute("class", "highlight");
+		ele.classList.add(CLASS_HIGHLIGHT);
 	}
 }
 
@@ -166,7 +169,9 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 		console.log("arrivalPredictionsResultCb", arrivalsObj);
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
-		displayArrivalsInfo(arrivalsObj);
+		const s = formatArrivalsInfo(arrivalsObj);
+		arrivalsInfoDiv.innerHTML = s;
+
 	} else {
 		arrivalsError(status);
 	}
@@ -215,63 +220,6 @@ function searchSubmitOnClick(ev)
 }
 
 //
-// Search result parsing
-//
-
-function getLineNames(lines)
-{
-	var names = [];
-	for (var l of lines) {
-		if (l.name) {
-			names.push(capitalise(l.name));
-		}
-	}
-	return names;
-}
-
-function getInfoFromSearchMatches(obj)
-{
-	var ret = [];
-	if (debug & DEBUG_PARSE)
-		console.log("getInfoFromSearchMatches: obj", obj);
-	if (obj.matches) {
-		for (var match of obj.matches) {
-			if (!match.id) {
-				console.log("getInfoFromSearchMatches(): id not in match");
-			} else {
-				var info = {};
-				info.id = match.id;
-				if (match.towards) {
-					info.towards = match.towards;
-				}
-				if (match.name) {
-					info.name = match.name;
-				}
-				if (match.stopLetter) {
-					info.stopLetter = match.stopLetter;
-				}
-				if (match.lines && match.lines.length > 0) {
-					info.lines = getLineNames(match.lines);
-				}
-				if (match.modes && match.modes.length > 0) {
-					info.modes = match.modes;
-				}
-				
-				/* hack - we assume this mismatch means we can use "id" directly as arrivals id */
-				if (match.topMostParentId && match.topMostParentId != match.id)
-					info.idUsable = true;
-				else
-					info.idUsable = false;
-				ret.push(info);
-			}
-		}
-	}
-	if (debug & DEBUG_PARSE)
-		console.log("getInfoFromSearchMatches: return", ret);
-	return ret;
-}
-
-//
 // Search requests and callbacks
 //
 
@@ -299,7 +247,9 @@ function searchResultCb(status, matchesObj)
 			resetArrivalsDiv();
 			resetStopPointDiv();
 			requestStopPointInfo(info[0].id);
-			//displayBusStopInfo(info[0]);
+			//const s = formatBusStopInfo(info[0]);
+			//busStopInfoDiv.innerHTML = s;
+
 			requestArrivalPredictions(info[0].id);
 		} else {
 			displaySearchSelection(info);
@@ -314,36 +264,6 @@ function searchStatusCb(req)
 	displayRequestStatus(selectionInfoDiv, req);
 
 }
-//
-// Search display formatting
-//
-
-function displaySearchSelection(info)
-{
-	var s = '<br><table border="1">';
-	for (var entry of info) {
-		var modeStr = "";
-		var first = true;
-		for (var mode of entry.modes) {
-			if (first) {
-				modeStr = capitalise(mode);
-				first = false;
-			} else {
-				modeStr += ', ' + capitalise(mode);
-			}
-		}
-		if (entry.stopLetter) {
-			modeStr += " (stop " + entry.stopLetter + ")";
-		}
-		var name = entry.name;
-		if (entry.towards)
-			name += "<br>(towards " + entry.towards + ")";
-		s += '<tr onclick="searchOnClick(event, \'' + entry.id + '\')"><td>' + name + "</td><td>" + modeStr + "</td></tr>";
-	}
-	s += "</table>";
-	selectionInfoDiv.innerHTML = s;
-}
-
 //
 // HTML callbacks
 //
@@ -373,58 +293,7 @@ function bodyLoadedEvent(event)
 	selectionInfoDiv = document.getElementById("selectionInfoDiv");
 	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
 	searchTextEl = document.getElementById("searchText");
-}
-
-//
-// Display functions
-//
-
-function displayBusStopInfo(info)
-{
-	var s = "<p>";
-	if (info.name)
-		s += info.name;
-	if (info.stopLetter)
-		s += " (stop " + info.stopLetter + ")";
-	if (info.lines) {
-		s += "<br>" + info.lines.join(", ");
-	}
-	if (info.towards) {
-		s += " - " + info.towards;
-	}
-	busStopInfoDiv.innerHTML = s;
-}
-
-function formatTimeToStationStr(t)
-{
-	var min = Math.floor(t/60);
-	var sec = t - (min * 60);
-	var sec10 = Math.floor(sec / 10);
-	sec = sec - (sec10 * 10);
-	return "" + min + ":" + (sec10 ? sec10 * 10 : "00");
-}
-
-function displayArrivalsInfo(info)
-{
-	if (debug & DEBUG_REQUEST)
-		console.log("displayArrivalsInfo: ", info);
-	var s = "";
-	if (info.length > 0) {
-		s = '<br><table border="1">';
-		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
-		for (var entry of info) {
-			var dest = entry.destinationName ? entry.destinationName : '';
-			s += "<tr><td>" + entry.lineName + "</td><td>" + dest + "</td><td>" + formatTimeToStationStr(entry.timeToStation + 0) + "</td>";
-			if (entry.modeName && entry.modeName == "tube") {
-				s += "<td>" + (entry.currentLocation ? entry.currentLocation : "") + "</td>";
-				s += "<td>" + (entry.platformName ? entry.platformName : "") + "</td>";
-			}
-		}
-		s += "</table>";
-	} else
-		s = "<p>(No arrivals information)<br>";
-	s += '<input type="button" class="info" id="arrivalsRefresh" onclick="arrivalsRequestOnClick()" value="Submit" />';
-	arrivalsInfoDiv.innerHTML = s;
+	initSelect();
 }
 
 function arrivalsRequestOnClick()
@@ -450,163 +319,6 @@ function stopPointOnClick(event, id)
 	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
 	requestArrivalPredictions(id);
-}
-
-/*****************************
- * Leaf Stop Point Functions *
- *****************************/
-
-//
-// Leaf Stop Point result parsing
-//
-
-function capitalise(s)
-{
-	if (s && s.length > 0)
-		return s.charAt(0).toUpperCase() + s.substring(1);
-	else
-		return s;
-}
-
-function formatLineIdentifierInfo(obj)
-{
-	var s = '';
-	var first = true;
-	for (var line of obj.lineIdentifier) {
-		if (line[0] != 'n' || displayNightBuses) {
-			if (first) {
-				s = capitalise(line);
-				first = false;
-			} else {
-				s += ', ' + capitalise(line);
-			}
-		}
-	}
-	return s;
-}
-
-function formatLineGroupInfo(arr)
-{
-	//console.log('formatLineGroupInfo: ', arr);
-	var s = '';
-	if (arr.length > 1)
-		alert("formatLineGroupInfo: more than one entry - taking first");
-	obj = arr[0];
-	if (obj.lineIdentifier && obj.lineIdentifier.length > 0) {
-		var arrivalsId;
-		if (obj.naptanIdReference)
-			arrivalsId = obj.naptanIdReference;
-		else
-			arrivalsId = obj.stationAtcoCode ? obj.stationAtcoCode : '';
-		s = formatLineIdentifierInfo(obj);
-	}
-	return { str: s, id: arrivalsId };
-	
-}
-
-function getAdditionalProperties(obj)
-{
-	var info = {};
-	if (obj.additionalProperties && obj.additionalProperties.length > 0) {
-		for (var prop of obj.additionalProperties) {
-			if (prop.category) {
-				switch (prop.category) {
-				case "Geo":
-					if (prop.key && prop.key == "Zone") {
-						info.zone = prop.value;
-					}
-					break;
-				case "Direction":
-					if (prop.key) {
-						switch (prop.key) {
-						case "CompassPoint":
-							info.direction = prop.value;
-							break;
-						case "Towards":
-							info.towards = prop.value;
-							break;
-						}
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		}
-	}
-	return info;
-}
-
-function getStopPointLeafInfo(obj, parent)
-{
-	var info = {};
-
-	if (obj.lines && obj.lines.length > 0) {
-		if (obj.stopLetter)
-			info.stopName = "Stop " + obj.stopLetter;
-		else
-		if (parent && parent.commonName)
-			info.stopName = parent.commonName;
-		else
-			info.stopName = "";
-
-		var props = getAdditionalProperties(obj);
-		if (props.towards)
-			info.dir = props.towards;
-		else
-		if (props.direction)
-			info.dir = props.direction;
-
-		// TODO - rename "lines" and "ids"
-		info.lines = [];
-		info.ids = [];
-		for (var line of obj.lines) {
-			if (line.name)
-				info.lines.push(line.name);
-			if (line.id)
-				info.ids.push(line.id);
-		}
-		
-		if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
-			info.id = obj.stationNaptan;
-		else
-		if (obj.naptanId)
-			info.id = obj.naptanId;
-		else
-		if (obj.id)
-			info.id = obj.id;
-		else
-		if (obj.stationNaptan)
-			info.id = obj.stationNaptan;
-		else
-			info.id = null;			// what to do here if there is no id ?
-	}
-	return info;
-}
-
-function getStopPointInfo(obj)
-{
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: obj", obj);
-	var info = [];
-	getStopPointInfo_recurse(obj, null, info);
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: return info", info);
-	return info;
-}
-
-function getStopPointInfo_recurse(obj, parent, result)
-{
-	if (obj.children && obj.children.length > 0) {
-		for (var child of obj.children) {
-			getStopPointInfo_recurse(child, obj, result);
-		}
-	} else {
-		var leaf_info = getStopPointLeafInfo(obj, parent);
-		if (leaf_info.id && !isDuplicate(result, leaf_info)) {
-			result.push(leaf_info);
-		}
-	}
 }
 
 function compareEqual(obj1, obj2)
@@ -637,27 +349,6 @@ function isDuplicate(list, obj)
 		}
 	}
 	return false;
-}
-
-//
-// Leaf Stop Point display formatting
-//
-
-function formatStopPointInfo(info)
-{
-	var s = '<br><table border="1">';
-	for (var stop of info) {
-		s += '<tr onclick="stopPointOnClick(event, \'' + stop.id + '\')">';
-		s += '<td>' + stop.stopName;
-		s += '<td>';
-		if (stop.lines)
-			s += stop.lines.join(', ');
-		s += '<td>';
-		if (stop.dir)
-			s += stop.dir;
-	}
-	s += '</table>';
-	return s;
 }
 
 function displayStopPointInfo(obj)
