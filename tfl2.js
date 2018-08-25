@@ -97,6 +97,16 @@ function displayRequestStatus(div, req)
 	}
 }
 
+function bodyLoadedEvent(event)
+{
+	busStopInfoDiv = document.getElementById("busStopInfoDiv");
+	arrivalsInfoDiv = document.getElementById("arrivalsInfoDiv");
+	selectionInfoDiv = document.getElementById("selectionInfoDiv");
+	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
+	searchTextEl = document.getElementById("searchText");
+	initSelect();
+}
+
 //
 // Functions for forming URLs
 //
@@ -140,7 +150,6 @@ function setSelectionHighlight(ele)
 	highlightRow(ele);
 	highlightedSelectionRow = ele;
 }
-
 
 //
 // Arrival predictions functionality and callbacks
@@ -281,16 +290,6 @@ function resetDivs()
 	selectionInfoDiv.innerHTML = "";
 	resetStopPointDiv();
 	resetArrivalsDiv();
-}
-
-function bodyLoadedEvent(event)
-{
-	busStopInfoDiv = document.getElementById("busStopInfoDiv");
-	arrivalsInfoDiv = document.getElementById("arrivalsInfoDiv");
-	selectionInfoDiv = document.getElementById("selectionInfoDiv");
-	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
-	searchTextEl = document.getElementById("searchText");
-	initSelect();
 }
 
 function arrivalsRequestOnClick()

@@ -10,8 +10,19 @@ function formatTableRowOnClick(funcName, funcArg)
 	return '<tr onclick="' + funcName + '(event, \'' + funcArg + '\')">';
 }
 
+// Capitalise a string
+
+function capitalise(s)
+{
+	if (s && s.length > 0)
+		return s.charAt(0).toUpperCase() + s.substring(1);
+	else
+		return s;
+}
+
+
 //
-// Search result formatting
+// Functions for formatting Search Result information
 //
 
 function displaySearchSelection(info)
@@ -43,7 +54,7 @@ function displaySearchSelection(info)
 }
 
 //
-// Stop Point formatting
+// Functions for formatting Stop Point information
 //
 
 function formatCheckBoxSelectCell()
@@ -81,14 +92,6 @@ function formatStopPointInfo(info)
 	return s;
 }
 
-function capitalise(s)
-{
-	if (s && s.length > 0)
-		return s.charAt(0).toUpperCase() + s.substring(1);
-	else
-		return s;
-}
-
 function formatLineIdentifierInfo(obj)
 {
 	var s = '';
@@ -124,6 +127,9 @@ function formatLineGroupInfo(arr)
 	return { str: s, id: arrivalsId };
 	
 }
+
+//
+// Given time t in seconds, generate an output string of the form "<min>:<sec>"
 
 function formatTimeToStationStr(t)
 {

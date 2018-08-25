@@ -1,5 +1,5 @@
 //
-// Search result parsing
+// Functions for parsing TFL Search Result information
 //
 
 function getLineNames(lines)
