@@ -28,15 +28,9 @@ function capitalise(s)
 //			]
 //
 
-function formatTable(tableAttrs, tableData, rowOnClick, rowOnClickArg, isSelectable)
+function formatTable(tableData, rowOnClick, isSelectable)
 {
-	var s = '';
-
-	if (tableAttrs) {
-		s = '<table ' + tableAttrs + '>';
-	} else {
-		s = '<table>';
-	}
+	var s = '<table border="1">';
 
 	for (var rowIndex = 0 ; rowIndex < tableData.length ; rowIndex++) {
 		if (rowOnClick)
@@ -90,13 +84,14 @@ function formatSearchResults(info)
 		
 		tableData.push( [ name, modeStr ] );
 	}
-	var s = '<br>' + formatTable('border="1"', tableData, 'searchOnClick', entry.id, false);
+	var s = '<br>' + formatTable(tableData, 'searchOnClick', false);
 	return s;
 }
 
-function formatButton(name, value, callback)
+function formatButton(value, callback)
 {
-	return '<input type="button" name="' + name + '" value="' + value + '" onClick="' + callback + '(event)"/>';
+	var s = '<input type="button" value="' + value + '" onClick="' + callback + '(event)" />';
+	return s;
 }
 
 //
@@ -113,8 +108,8 @@ function formatCheckBoxSelectCell(i)
 function formatStopPointInfo(info)
 {
 	// "Select" and "+" buttons
-	var s = formatButton("selectButton", "Select", "selectButtonOnClick") + '&emsp;' +
-			formatButton("addButton", "Save", "addButtonOnClick") + '<br>';
+	var s = formatButton("Select", "selectButtonOnClick") + '&emsp;' +
+			formatButton("Save", "addButtonOnClick") + '<br>';
 	
 	var tableData = [];
 
@@ -136,7 +131,7 @@ function formatStopPointInfo(info)
 		
 		tableData.push( [ stop.stopName,  lines, dir ] );
 	}
-	s += formatTable('border="1"', tableData, 'stopPointOnClick', stop.id, true);
+	s += formatTable(tableData, 'stopPointOnClick', true);
 	return s;
 }
 
@@ -212,26 +207,27 @@ function formatArrivalsInfo(info)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("formatArrivalsInfo: ", info);
-	var s = "";
+	var s = '';
 	if (info.length > 0) {
-		s = '<br>' + tableStartBorder;
+		s = '<br>';
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
+		var tableData = [];
 		for (var entry of info) {
 			var dest = entry.destinationName ? entry.destinationName : '';
-			s += tableRow +
-				 tableData + entry.lineName + tableDataEnd +
-				 tableData + dest + tableDataEnd +
-				 tableData + formatTimeToStationStr(entry.timeToStation + 0) + tableDataEnd;
-
-			if (entry.modeName && entry.modeName == "tube") {
-				s += tableData + (entry.currentLocation ? entry.currentLocation : "") + tableDataEnd;
-				s += tableData + (entry.platformName ? entry.platformName : "") + tableDataEnd;
+			var isTube = (entry.modeName && entry.modeName == "tube");
+			if (isTube)
+				dest = dest.replace('Underground Station', '');
+			var tableRow = [ entry.lineName, dest, formatTimeToStationStr(entry.timeToStation + 0) ];
+			if (isTube) {
+				tableRow.push(entry.currentLocation ? entry.currentLocation : "");
+				tableRow.push(entry.platformName ? entry.platformName : "");
 			}
+			tableData.push(tableRow);
 		}
-		s += tableEnd;
+		s += formatTable(tableData, null, false);
 	} else
 		s = '<p>(No arrivals information)<br>';
-	s += '<input type="button" class="info" id="arrivalsRefresh" onclick="arrivalsRequestOnClick()" value="Submit" />';
+	s += formatButton("Submit", "arrivalsRequestOnClick");
 	return s;
 }
 
