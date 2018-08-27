@@ -47,6 +47,7 @@ var highlightedStopPointRow = null;
 
 var currentArrivalRequestId = null;
 var currentStopPointInfo = null;
+var currentSearchResultsInfo = null;
 
 //
 // HTTP Request instances
@@ -104,7 +105,6 @@ function bodyLoadedEvent(event)
 	selectionInfoDiv = document.getElementById("selectionInfoDiv");
 	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
 	searchTextEl = document.getElementById("searchText");
-	initSelect();
 }
 
 //
@@ -229,6 +229,16 @@ function searchSubmitOnClick(ev)
 // Search requests and callbacks
 //
 
+function getCurrentSearchResultsInfo(info)
+{
+	return currentSearchResultsInfo;
+}
+
+function setCurrentSearchResultsInfo(info)
+{
+	currentSearchResultsInfo = info;
+}
+
 function requestTextSearchMatches(text)
 {
 	searchReq = new Request();
@@ -242,14 +252,22 @@ function searchError(status)
 	selectionInfoDiv.innerHTML = "<b>Search Error " + status;
 }
 
+function displaySearchResults(info)
+{
+	var s = formatSearchResults(info);
+	selectionInfoDiv.innerHTML = s;
+}
+
 function searchResultCb(status, matchesObj)
 {
 	searchReq = null;				// reference no longer required
 
+	setCurrentSearchResultsInfo(null);
 	if (status == 200) {
 		var info = getInfoFromSearchMatches(matchesObj);	// info is an array
+		setCurrentSearchResultsInfo(info);
 		if (info.length == 1 && info[0].idUsable) {
-			displaySearchSelection(info);
+			displaySearchResults(info);
 			resetArrivalsDiv();
 			resetStopPointDiv();
 			requestStopPointInfo(info[0].id);
@@ -258,7 +276,7 @@ function searchResultCb(status, matchesObj)
 
 			requestArrivalPredictions(info[0].id);
 		} else {
-			displaySearchSelection(info);
+			displaySearchResults(info);
 		}
 	} else
 		searchError(status);
@@ -307,22 +325,35 @@ function setStopPointHighlight(ele)
 	highlightedStopPointRow = ele;
 }
 
-function stopPointOnClick(event, id)
+function stopPointOnClick(event, row)
 {
+	row = parseInt(row, 10);
 	if (debug & DEBUG_REQUEST)
-		console.log("stopPointOnClick: ", id);
+		console.log("stopPointOnClick: ", row);
 	var rowEle = event.target.parentNode;
 	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
+	var id = getCurrentStopPointInfo()[row].id;
 	requestArrivalPredictions(id);
 }
 
-function displayStopPointInfo(obj)
+function displayStopPointInfo(info)
 {
 	if (debug & DEBUG_DISPLAY)
-		console.log("displayStopPointInfo: ", obj);
-	var s = formatStopPointInfo(obj);
+		console.log("displayStopPointInfo: ", info);
+	var s = formatStopPointInfo(info);
 	stopPointInfoDiv.innerHTML = s;
+	initSelect();
+}
+
+function setCurrentStopPointInfo(info)
+{
+	currentStopPointInfo = info;
+}
+
+function getCurrentStopPointInfo(info)
+{
+	return currentStopPointInfo;
 }
 
 //
@@ -334,11 +365,11 @@ function stopPointResultCb(status, stopPointObj)
 	if (status == 200) {
 		stopPointReq = null;			// reference no longer needed
 		var info = getStopPointInfo(stopPointObj);
-		currentStopPointInfo = info;	// save away stop point list
+		setCurrentStopPointInfo(info);	// save away stop point list
 		displayStopPointInfo(info);
 	} else {
 		stopPointInfoDiv.innerHTML = "Stop Point Error " + status;
-		currentStopPointInfo = null;
+		setCurrentStopPointInfo(null);
 	}
 }
 
@@ -347,16 +378,18 @@ function stopPointStatusCb(req)
 	displayRequestStatus(stopPointInfoDiv, req);
 }
 
-function searchOnClick(event, id)
+function searchOnClick(event, row)
 {
+	row = parseInt(row, 10);
 	if (debug & DEBUG_REQUEST)
-		console.log("searchOnClick", id);
+		console.log("searchOnClick", row);
 	var rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
 	resetArrivalsDiv();
 	resetStopPointDiv();
 
 	stopPointReq = new Request();
+	var id = getCurrentSearchResultsInfo()[row].id;
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
 

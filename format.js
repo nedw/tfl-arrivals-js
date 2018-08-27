@@ -20,17 +20,57 @@ function capitalise(s)
 		return s;
 }
 
+//
+// data:	[
+//			  [ col, ... ],
+//			  [ col, ... ],
+//			       ...
+//			]
+//
+
+function formatTable(tableAttrs, tableData, rowOnClick, rowOnClickArg, isSelectable)
+{
+	var s = '';
+
+	if (tableAttrs) {
+		s = '<table ' + tableAttrs + '>';
+	} else {
+		s = '<table>';
+	}
+
+	for (var rowIndex = 0 ; rowIndex < tableData.length ; rowIndex++) {
+		if (rowOnClick)
+			s += formatTableRowOnClick(rowOnClick, rowIndex);
+		else
+			s += '<tr>';
+		
+		for (var colIndex = 0 ; colIndex < tableData[rowIndex].length ; colIndex++) {
+			s += '<td>' + tableData[rowIndex][colIndex] + '</td>';
+		}
+
+		if (isSelectable) {
+			// Select check box (normally hidden)
+			s += formatCheckBoxSelectCell(rowIndex);
+		}
+
+		s += '</tr>'
+	}
+	s += '</table>';
+	return s;
+}
 
 //
 // Functions for formatting Search Result information
 //
 
-function displaySearchSelection(info)
+function formatSearchResults(info)
 {
-	var s = '<br>' + tableStartBorder;
+	var tableData = [];
+
 	for (var entry of info) {
 		var modeStr = "";
 		var first = true;
+
 		for (var mode of entry.modes) {
 			if (first) {
 				modeStr = capitalise(mode);
@@ -39,56 +79,64 @@ function displaySearchSelection(info)
 				modeStr += ', ' + capitalise(mode);
 			}
 		}
+		
 		if (entry.stopLetter) {
 			modeStr += " (stop " + entry.stopLetter + ")";
 		}
+
 		var name = entry.name;
 		if (entry.towards)
 			name += "<br>(towards " + entry.towards + ")";
-			s += formatTableRowOnClick("searchOnClick", entry.id) + 
-		     tableData + name + tableDataEnd +
-			 tableData + modeStr + tableDataEnd + tableRowEnd;
+		
+		tableData.push( [ name, modeStr ] );
 	}
-	s += tableEnd;
-	selectionInfoDiv.innerHTML = s;
+	var s = '<br>' + formatTable('border="1"', tableData, 'searchOnClick', entry.id, false);
+	return s;
+}
+
+function formatButton(name, value, callback)
+{
+	return '<input type="button" name="' + name + '" value="' + value + '" onClick="' + callback + '(event)"/>';
 }
 
 //
 // Functions for formatting Stop Point information
 //
 
-function formatCheckBoxSelectCell()
+function formatCheckBoxSelectCell(i)
 {
 	return '<td class="selectClass">' +
-		   '<input type="checkbox" name="selectCheckbox"  onchange="selectOnChange(event)"></input>' +
+		   '<input type="checkbox" name="selectCheckbox"  onchange="selectOnChange(event, ' + i +  ')"></input>' +
 		   tableDataEnd;
-}
-
-function formatSelectButton()
-{
-	return '<input type="button" name="selectButton" value="Select" onClick="selectButtonOnClick(event)"/>';
 }
 
 function formatStopPointInfo(info)
 {
-	// "Select" button
-	var s = formatSelectButton();
+	// "Select" and "+" buttons
+	var s = formatButton("selectButton", "Select", "selectButtonOnClick") + '&emsp;' +
+			formatButton("addButton", "Save", "addButtonOnClick") + '<br>';
 	
+	var tableData = [];
+
 	// Table of stop points
-	s += '<br>' + tableStartBorder;
-	for (var stop of info) {
-		s += formatTableRowOnClick("stopPointOnClick", stop.id) + 
-			 tableData + stop.stopName +
-			 tableData;
+	for (var i = 0 ; i < info.length ; i++) {
+		var stop = info[i];
+
+		var lines;
 		if (stop.lines)
-			s += stop.lines.join(', ');
-		s += tableData;
+			lines = stop.lines.join(', ');
+		else
+			lines = '';
+
+		var dir;
 		if (stop.dir)
-			s += stop.dir;
-		// Select check box (normally hidden)
-		s += formatCheckBoxSelectCell() + tableRowEnd;
+			dir = stop.dir;
+		else
+			dir = '';
+		
+		tableData.push( [ stop.stopName,  lines, dir ] );
 	}
-	s += tableEnd;
+	s += formatTable('border="1"', tableData, 'stopPointOnClick', stop.id, true);
 	return s;
 }
 

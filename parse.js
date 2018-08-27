@@ -96,6 +96,9 @@ function getStopPointLeafInfo(obj, parent)
 		if (obj.stopLetter)
 			info.stopName = "Stop " + obj.stopLetter;
 		else
+		if (obj.commonName)
+			info.stopName = obj.commonName;
+		else
 		if (parent && parent.commonName)
 			info.stopName = parent.commonName;
 		else
