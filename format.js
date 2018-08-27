@@ -152,6 +152,7 @@ function formatLineIdentifierInfo(obj)
 	return s;
 }
 
+/*
 function formatLineGroupInfo(arr)
 {
 	//console.log('formatLineGroupInfo: ', arr);
@@ -168,8 +169,8 @@ function formatLineGroupInfo(arr)
 		s = formatLineIdentifierInfo(obj);
 	}
 	return { str: s, id: arrivalsId };
-	
 }
+*/
 
 //
 // Given time t in seconds, generate an output string of the form "<min>:<sec>"

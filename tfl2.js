@@ -229,7 +229,7 @@ function searchSubmitOnClick(ev)
 // Search requests and callbacks
 //
 
-function getCurrentSearchResultsInfo(info)
+function getCurrentSearchResultsInfo()
 {
 	return currentSearchResultsInfo;
 }
@@ -333,7 +333,7 @@ function stopPointOnClick(event, row)
 	var rowEle = event.target.parentNode;
 	setStopPointHighlight(rowEle);
 	resetArrivalsDiv();
-	var id = getCurrentStopPointInfo()[row].id;
+	var id = getCurrentStopPointInfo().info[row].id;
 	requestArrivalPredictions(id);
 }
 
@@ -351,7 +351,7 @@ function setCurrentStopPointInfo(info)
 	currentStopPointInfo = info;
 }
 
-function getCurrentStopPointInfo(info)
+function getCurrentStopPointInfo()
 {
 	return currentStopPointInfo;
 }
@@ -366,7 +366,7 @@ function stopPointResultCb(status, stopPointObj)
 		stopPointReq = null;			// reference no longer needed
 		var info = getStopPointInfo(stopPointObj);
 		setCurrentStopPointInfo(info);	// save away stop point list
-		displayStopPointInfo(info);
+		displayStopPointInfo(info.info);
 	} else {
 		stopPointInfoDiv.innerHTML = "Stop Point Error " + status;
 		setCurrentStopPointInfo(null);

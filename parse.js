@@ -113,12 +113,12 @@ function getStopPointLeafInfo(obj, parent)
 
 		// TODO - rename "lines" and "ids"
 		info.lines = [];
-		info.ids = [];
+		//info.ids = [];
 		for (var line of obj.lines) {
 			if (line.name)
 				info.lines.push(line.name);
-			if (line.id)
-				info.ids.push(line.id);
+			//if (line.id)
+			//	info.ids.push(line.id);
 		}
 		
 		if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
@@ -168,17 +168,6 @@ function isDuplicate(list, obj)
 	return false;
 }
 
-function getStopPointInfo(obj)
-{
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: obj", obj);
-	var info = [];
-	getStopPointInfo_recurse(obj, null, info);
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: return info", info);
-	return info;
-}
-
 function getStopPointInfo_recurse(obj, parent, result)
 {
 	if (obj.children && obj.children.length > 0) {
@@ -191,5 +180,16 @@ function getStopPointInfo_recurse(obj, parent, result)
 			result.push(leaf_info);
 		}
 	}
+}
+
+function getStopPointInfo(obj)
+{
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: obj", obj);
+	var info = [];
+	getStopPointInfo_recurse(obj, null, info);
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: return info", info);
+	return { name: obj.commonName, info: info };
 }
 

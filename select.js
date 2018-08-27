@@ -10,7 +10,7 @@ function initSelect()
 
 function selectOnChange(ev, infoIndex)
 {
-	console.log("selectOnChange(", ev, ",", getCurrentStopPointInfo()[infoIndex], ")");
+	console.log("selectOnChange(", ev, ",", getCurrentStopPointInfo().info[infoIndex], ")");
 	ev.stopPropagation();
 }
 
@@ -36,11 +36,12 @@ function selectButtonOnClick(ev)
 
 function addButtonOnClick(ev)
 {
-	console.log("addButtonOnClick(", ev, ")");
+	var stopPointInfo = getCurrentStopPointInfo();
+	console.log("addButtonOnClick(", ev, "): name ", stopPointInfo.name);
 	for (var i = 0 ; i < selectionCheckboxElements.length ; i++) {
 		e = selectionCheckboxElements[i];
 		if (e.checked) {
-			console.log(getCurrentStopPointInfo()[i]);
+			console.log(stopPointInfo.info[i]);
 		}
 	}
 }
