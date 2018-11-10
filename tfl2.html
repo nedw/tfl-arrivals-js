@@ -7,19 +7,24 @@
 <script src="select.js"></script>
 <script src="format.js"></script>
 <script src="parse.js"></script>
+<script src="storage.js"></script>
 </head>
 
 <body onload="bodyLoadedEvent(event)">
 <br>
 <span class="info">Search Text:&ensp;</span>
 <input type="text"   class="info" id="searchText"/>
+&emsp;
 <input type="button" class="info" id="searchSubmit" value="Submit" onclick="searchSubmitOnClick(event)"/>
+&emsp;
+<input type="button" class="info" id="savedButton" value="Saved" onclick="savedOnClick(event)"/>
 <hr>
 <br>
 <div id="selectionInfoDiv"></div>
 <div id="stopPointInfoDiv"></div>
 <div id="busStopInfoDiv" class="info"></div>
 <div id="arrivalsInfoDiv"></div>
+<div id="savedStopPointDiv"></div>
 </body>
 
 </html>

@@ -84,7 +84,7 @@ function formatSearchResults(info)
 		
 		tableData.push( [ name, modeStr ] );
 	}
-	var s = '<br>' + formatTable(tableData, 'searchOnClick', false);
+	var s = '<p>Search Results:<br>' + formatTable(tableData, 'searchOnClick', false);
 	return s;
 }
 
@@ -105,13 +105,9 @@ function formatCheckBoxSelectCell(i)
 		   tableDataEnd;
 }
 
-function formatStopPointInfo(info)
+function generateStopPointTable(info)
 {
-	// "Select" and "+" buttons
-	var s = formatButton("Select", "selectButtonOnClick") + '&emsp;' +
-			formatButton("Save", "addButtonOnClick") + '<br>';
-	
-	var tableData = [];
+	let tableData = [];
 
 	// Table of stop points
 	for (var i = 0 ; i < info.length ; i++) {
@@ -131,7 +127,25 @@ function formatStopPointInfo(info)
 		
 		tableData.push( [ stop.stopName,  lines, dir ] );
 	}
-	s += formatTable(tableData, 'stopPointOnClick', true);
+	return tableData;
+}
+
+function formatStopPointInfo(info)
+{
+	let tableData = generateStopPointTable(info);
+
+	s = formatTable(tableData, 'stopPointOnClick', true);
+	return s;
+}
+
+function formatStopPointFrame(info)
+{
+	// "Select" and "+" buttons
+	var s = formatButton("Select", "selectButtonOnClick") + '&emsp;' +
+			formatButton("Save",   "addButtonOnClick")    +
+			'<br>';
+
+	s += formatStopPointInfo(info)
 	return s;
 }
 
@@ -208,9 +222,9 @@ function formatArrivalsInfo(info)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("formatArrivalsInfo: ", info);
-	var s = '';
+	var s = '<p>Arrivals:';
 	if (info.length > 0) {
-		s = '<br>';
+		s += '<br>';
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
 		var tableData = [];
 		for (var entry of info) {
@@ -228,7 +242,7 @@ function formatArrivalsInfo(info)
 		s += formatTable(tableData, null, false);
 	} else
 		s = '<p>(No arrivals information)<br>';
-	s += formatButton("Submit", "arrivalsRequestOnClick");
+	s += formatButton("Refresh", "arrivalsRequestOnClick");
 	return s;
 }
 

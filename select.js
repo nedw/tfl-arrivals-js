@@ -10,15 +10,12 @@ function initSelect()
 
 function selectOnChange(ev, infoIndex)
 {
-	console.log("selectOnChange(", ev, ",", getCurrentStopPointInfo().info[infoIndex], ")");
+	//console.log("selectOnChange(", ev, ",", getCurrentStopPointInfo().info[infoIndex], ")");
 	ev.stopPropagation();
 }
 
-function selectButtonOnClick(ev)
+function updateSelectionElementVisibility()
 {
-	console.log("selectButtonOnClick(", ev, ")");
-	selectionMode = !selectionMode;
-	
 	for (var e of selectionHideElements) {
 		if (selectionMode) {
 			e.style.display = "table-cell";
@@ -34,14 +31,32 @@ function selectButtonOnClick(ev)
 	}
 }
 
+function selectButtonOnClick(ev)
+{
+	console.log("selectButtonOnClick(", ev, ")");
+	selectionMode = !selectionMode;
+	updateSelectionElementVisibility();
+}
+
 function addButtonOnClick(ev)
 {
-	var stopPointInfo = getCurrentStopPointInfo();
+	let stopPointInfo = getCurrentStopPointInfo();
+	let savedStopPoints = storage.getStopPoints();
+
 	console.log("addButtonOnClick(", ev, "): name ", stopPointInfo.name);
-	for (var i = 0 ; i < selectionCheckboxElements.length ; i++) {
+
+	if (savedStopPoints == null)
+		savedStopPoints = [];
+
+	for (let i = 0 ; i < selectionCheckboxElements.length ; i++) {
 		e = selectionCheckboxElements[i];
 		if (e.checked) {
-			console.log(stopPointInfo.info[i]);
+			let info = stopPointInfo.info[i];
+			console.log("Saving", info);
+			let obj = savedStopPoints.find(o => o.id == info.id);
+			if (!obj)
+				savedStopPoints.push(info);
 		}
 	}
+	storage.setStopPoints(savedStopPoints);
 }

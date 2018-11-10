@@ -40,6 +40,8 @@ var busStopInfoDiv = null;
 var arrivalsInfoDiv = null;
 var selectionInfoDiv = null;
 var stopPointInfoDiv = null;
+var savedStopPointDiv = null;
+
 var searchTextEl = null;
 var displayNightBuses = false;
 var highlightedSelectionRow = null;
@@ -104,7 +106,9 @@ function bodyLoadedEvent(event)
 	arrivalsInfoDiv = document.getElementById("arrivalsInfoDiv");
 	selectionInfoDiv = document.getElementById("selectionInfoDiv");
 	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
+	savedStopPointDiv = document.getElementById("savedStopPointDiv");
 	searchTextEl = document.getElementById("searchText");
+	storage.loadStopPoints();
 }
 
 //
@@ -318,6 +322,17 @@ function arrivalsRequestOnClick()
 	}
 }
 
+function getTableRowElement(div, row)
+{
+	let rowEles = div.getElementsByTagName("tr");
+	return rowEles[row];
+}
+
+function targetIsCheckbox(event)
+{
+	return (event.target.type && event.target.type == "checkbox");
+}
+
 function setStopPointHighlight(ele)
 {
 	unhighlightRow(highlightedStopPointRow);
@@ -327,21 +342,24 @@ function setStopPointHighlight(ele)
 
 function stopPointOnClick(event, row)
 {
-	row = parseInt(row, 10);
+	let row = parseInt(row, 10);
 	if (debug & DEBUG_REQUEST)
 		console.log("stopPointOnClick: ", row);
-	var rowEle = event.target.parentNode;
-	setStopPointHighlight(rowEle);
-	resetArrivalsDiv();
-	var id = getCurrentStopPointInfo().info[row].id;
-	requestArrivalPredictions(id);
+	//var rowEle = event.target.parentNode;
+	if (!targetIsCheckbox(event)) {
+		let rowEle = getTableRowElement(stopPointInfoDiv, row);
+		setStopPointHighlight(rowEle);
+		resetArrivalsDiv();
+		let id = getCurrentStopPointInfo().info[row].id;
+		requestArrivalPredictions(id);
+	}
 }
 
 function displayStopPointInfo(info)
 {
 	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", info);
-	var s = formatStopPointInfo(info);
+	let s = formatStopPointFrame(info);
 	stopPointInfoDiv.innerHTML = s;
 	initSelect();
 }
@@ -364,7 +382,7 @@ function stopPointResultCb(status, stopPointObj)
 {
 	if (status == 200) {
 		stopPointReq = null;			// reference no longer needed
-		var info = getStopPointInfo(stopPointObj);
+		let info = getStopPointInfo(stopPointObj);
 		setCurrentStopPointInfo(info);	// save away stop point list
 		displayStopPointInfo(info.info);
 	} else {
@@ -383,13 +401,12 @@ function searchOnClick(event, row)
 	row = parseInt(row, 10);
 	if (debug & DEBUG_REQUEST)
 		console.log("searchOnClick", row);
-	var rowEle = event.target.parentNode;
+	let rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
 	resetArrivalsDiv();
 	resetStopPointDiv();
 
 	stopPointReq = new Request();
-	var id = getCurrentSearchResultsInfo()[row].id;
+	let id = getCurrentSearchResultsInfo()[row].id;
 	stopPointReq.request(getStopPointInfoUrl(id), stopPointResultCb, stopPointStatusCb);
 }
-
