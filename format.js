@@ -1,13 +1,73 @@
-const tableStartBorder = '<table border="1">';
-const tableEnd     = '</table>';
-const tableRow     = '<tr>';
-const tableRowEnd  = '</tr>'
-const tableData    = '<td>';
-const tableDataEnd = '</td>';
+class Formatter {
+	static formatButton(value, callback)
+	{
+		return `<input type="button" value="${value}" onClick="${callback}(event)" />`;
+	}
 
-function formatTableRowOnClick(funcName, funcArg)
-{
-	return '<tr onclick="' + funcName + '(event, \'' + funcArg + '\')">';
+	//
+	// Given func and arg parameters, generate a table row of the form:
+	//
+	//	<tr onclick='<func>(event, <arg>)'>
+	//
+
+	static formatTableRowOnClick(func, arg)
+	{
+		return `<tr onclick="${func}(event, ${arg})">`;
+	}
+
+	//
+	// Generate a checkbox within a table data cell of the form:
+	//
+	//	<td class="<prefix>SelectClass">
+	//	<input type="checkbox" class="<prefix>SelectCheckbox"  onchange="selectOnChange(event, <i>)" />
+	//	</td>
+	//
+	// Where 'prefix' and 'i' are parameters.
+	//
+
+
+	static formatCheckBoxSelectCell(prefix, i)
+	{
+		let [selectClass, selectCheckbox, selectOnChange] = Selector.cellAttributes(prefix);
+		return `<td class="${selectClass}" style="display: none">` +
+			   `<input type="checkbox" class="${selectCheckbox}" onchange="${selectOnChange}(event, ${i})" /></td>`;
+	}
+
+	//
+	// Generate a table from a two dimensional array of strings, where each element represents a table
+	// data cell.  Each row can have a variable number of columns, ie:
+	//
+	// tableData: [
+	//			  [ col1, col2, ..., colM ],
+	//			  [ col1, col2, ..., colN ],
+	//			       ...
+	//			  ]
+	//
+
+	static formatTable(prefix, tableData, rowOnClick, isSelectable)
+	{
+		var s = '<table border="1">';
+
+		for (var rowIndex = 0 ; rowIndex < tableData.length ; rowIndex++) {
+			if (rowOnClick)
+				s += Formatter.formatTableRowOnClick(rowOnClick, rowIndex);
+			else
+				s += '<tr>';
+			
+			for (var colIndex = 0 ; colIndex < tableData[rowIndex].length ; colIndex++) {
+				s += `<td>${tableData[rowIndex][colIndex]}</td>`;
+			}
+
+			if (isSelectable) {
+				// Select check box (normally hidden)
+				s += Formatter.formatCheckBoxSelectCell(prefix, rowIndex);
+			}
+
+			s += '</tr>'
+		}
+		s += '</table>';
+		return s;
+	}
 }
 
 // Capitalise a string
@@ -21,43 +81,10 @@ function capitalise(s)
 }
 
 //
-// data:	[
-//			  [ col, ... ],
-//			  [ col, ... ],
-//			       ...
-//			]
-//
-
-function formatTable(tableData, rowOnClick, isSelectable)
-{
-	var s = '<table border="1">';
-
-	for (var rowIndex = 0 ; rowIndex < tableData.length ; rowIndex++) {
-		if (rowOnClick)
-			s += formatTableRowOnClick(rowOnClick, rowIndex);
-		else
-			s += '<tr>';
-		
-		for (var colIndex = 0 ; colIndex < tableData[rowIndex].length ; colIndex++) {
-			s += '<td>' + tableData[rowIndex][colIndex] + '</td>';
-		}
-
-		if (isSelectable) {
-			// Select check box (normally hidden)
-			s += formatCheckBoxSelectCell(rowIndex);
-		}
-
-		s += '</tr>'
-	}
-	s += '</table>';
-	return s;
-}
-
-//
 // Functions for formatting Search Result information
 //
 
-function formatSearchResults(info)
+function generateSearchResultsTable(info)
 {
 	var tableData = [];
 
@@ -75,22 +102,22 @@ function formatSearchResults(info)
 		}
 		
 		if (entry.stopLetter) {
-			modeStr += " (stop " + entry.stopLetter + ")";
+			modeStr += ` (stop ${entry.stopLetter})`;
 		}
 
 		var name = entry.name;
 		if (entry.towards)
-			name += "<br>(towards " + entry.towards + ")";
+			name += `<br>(towards ${entry.towards})`;
 		
 		tableData.push( [ name, modeStr ] );
 	}
-	var s = '<p>Search Results:<br>' + formatTable(tableData, 'searchOnClick', false);
-	return s;
+	return tableData;
 }
 
-function formatButton(value, callback)
+function formatSearchResults(info)
 {
-	var s = '<input type="button" value="' + value + '" onClick="' + callback + '(event)" />';
+	var tableData = generateSearchResultsTable(info);
+	var s = '<p>Search Results:<br>' + Formatter.formatTable("", tableData, 'searchOnClick', false);
 	return s;
 }
 
@@ -98,34 +125,29 @@ function formatButton(value, callback)
 // Functions for formatting Stop Point information
 //
 
-function formatCheckBoxSelectCell(i)
-{
-	return '<td class="selectClass">' +
-		   '<input type="checkbox" name="selectCheckbox"  onchange="selectOnChange(event, ' + i +  ')"></input>' +
-		   tableDataEnd;
-}
-
 function generateStopPointTable(info)
 {
 	let tableData = [];
 
-	// Table of stop points
-	for (var i = 0 ; i < info.length ; i++) {
-		var stop = info[i];
+	if (info) {
+		// Table of stop points
+		for (var i = 0 ; i < info.length ; i++) {
+			var stop = info[i];
 
-		var lines;
-		if (stop.lines)
-			lines = stop.lines.join(', ');
-		else
-			lines = '';
+			var lines;
+			if (stop.lines)
+				lines = stop.lines.join(', ');
+			else
+				lines = '';
 
-		var dir;
-		if (stop.dir)
-			dir = stop.dir;
-		else
-			dir = '';
-		
-		tableData.push( [ stop.stopName,  lines, dir ] );
+			var dir;
+			if (stop.dir)
+				dir = stop.dir;
+			else
+				dir = '';
+			
+			tableData.push( [ stop.stopName,  lines, dir ] );
+		}
 	}
 	return tableData;
 }
@@ -134,21 +156,22 @@ function formatStopPointInfo(info)
 {
 	let tableData = generateStopPointTable(info);
 
-	s = formatTable(tableData, 'stopPointOnClick', true);
+	let s = Formatter.formatTable("", tableData, 'stopPointOnClick', true);
 	return s;
 }
 
 function formatStopPointFrame(info)
 {
 	// "Select" and "+" buttons
-	var s = formatButton("Select", "selectButtonOnClick") + '&emsp;' +
-			formatButton("Save",   "addButtonOnClick")    +
+	var s = Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
+			Formatter.formatButton("Save",   "addButtonOnClick")    +
 			'<br>';
 
 	s += formatStopPointInfo(info)
 	return s;
 }
 
+/*
 function formatLineIdentifierInfo(obj)
 {
 	var s = '';
@@ -166,7 +189,6 @@ function formatLineIdentifierInfo(obj)
 	return s;
 }
 
-/*
 function formatLineGroupInfo(arr)
 {
 	//console.log('formatLineGroupInfo: ', arr);
@@ -198,6 +220,7 @@ function formatTimeToStationStr(t)
 	return "" + min + ":" + (sec10 ? sec10 * 10 : "00");
 }
 
+/*
 function formatBusStopInfo(info)
 {
 	var s = "<p>";
@@ -213,10 +236,29 @@ function formatBusStopInfo(info)
 	}
 	return s;
 }
+*/
 
 //
 // Arrivals info formatting
 //
+
+function generateArrivalsInfoTable(info)
+{
+	let tableData = [];
+	for (let entry of info) {
+		let dest = entry.destinationName ? entry.destinationName : '';
+		let isTube = (entry.modeName && entry.modeName == "tube");
+		if (isTube)
+			dest = dest.replace('Underground Station', '');
+		let tableRow = [ entry.lineName, dest, formatTimeToStationStr(entry.timeToStation + 0) ];
+		if (isTube) {
+			tableRow.push(entry.currentLocation ? entry.currentLocation : "");
+			tableRow.push(entry.platformName ? entry.platformName : "");
+		}
+		tableData.push(tableRow);
+	}
+	return tableData;
+}
 
 function formatArrivalsInfo(info)
 {
@@ -226,23 +268,11 @@ function formatArrivalsInfo(info)
 	if (info.length > 0) {
 		s += '<br>';
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
-		var tableData = [];
-		for (var entry of info) {
-			var dest = entry.destinationName ? entry.destinationName : '';
-			var isTube = (entry.modeName && entry.modeName == "tube");
-			if (isTube)
-				dest = dest.replace('Underground Station', '');
-			var tableRow = [ entry.lineName, dest, formatTimeToStationStr(entry.timeToStation + 0) ];
-			if (isTube) {
-				tableRow.push(entry.currentLocation ? entry.currentLocation : "");
-				tableRow.push(entry.platformName ? entry.platformName : "");
-			}
-			tableData.push(tableRow);
-		}
-		s += formatTable(tableData, null, false);
+		let tableData = generateArrivalsInfoTable(info);
+		s += Formatter.formatTable("", tableData, null, false);
 	} else
 		s = '<p>(No arrivals information)<br>';
-	s += formatButton("Refresh", "arrivalsRequestOnClick");
+	s += Formatter.formatButton("Refresh", "arrivalsRequestOnClick");
 	return s;
 }
 

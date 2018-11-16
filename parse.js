@@ -2,15 +2,142 @@
 // Functions for parsing TFL Search Result information
 //
 
-function getLineNames(lines)
-{
-	var names = [];
-	for (var l of lines) {
-		if (l.name) {
-			names.push(capitalise(l.name));
+class Parser {
+	static getLineNames(lines)
+	{
+		var names = [];
+		for (var l of lines) {
+			if (l.name) {
+				names.push(capitalise(l.name));
+			}
+		}
+		return names;
+	}
+
+	static getInfoFromSearchMatch(match)
+	{
+		var info = {};
+		info.id = match.id;
+		if (match.towards) {
+			info.towards = match.towards;
+		}
+		if (match.name) {
+			info.name = match.name;
+		}
+		if (match.stopLetter) {
+			info.stopLetter = match.stopLetter;
+		}
+		if (match.lines && match.lines.length > 0) {
+			info.lines = Parser.getLineNames(match.lines);
+		}
+		if (match.modes && match.modes.length > 0) {
+			info.modes = match.modes;
+		}
+		
+		/* hack - we assume this mismatch means we can use "id" directly as arrivals id */
+		if (match.topMostParentId && match.topMostParentId != match.id)
+			info.idUsable = true;
+		else
+			info.idUsable = false;
+		return info;
+	}
+
+	static getAdditionalProperties(obj)
+	{
+		var info = {};
+		if (obj.additionalProperties && obj.additionalProperties.length > 0) {
+			for (var prop of obj.additionalProperties) {
+				if (prop.category) {
+					switch (prop.category) {
+					case "Geo":
+						if (prop.key && prop.key == "Zone") {
+							info.zone = prop.value;
+						}
+						break;
+					case "Direction":
+						if (prop.key) {
+							switch (prop.key) {
+							case "CompassPoint":
+								info.direction = prop.value;
+								break;
+							case "Towards":
+								info.towards = prop.value;
+								break;
+							}
+						}
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+		return info;
+	}
+
+	static getStopPointLeafInfo(obj, parent)
+	{
+		var info = {};
+
+		if (obj.lines && obj.lines.length > 0) {
+			if (obj.stopLetter)
+				info.stopName = "Stop " + obj.stopLetter;
+			else
+			if (obj.commonName)
+				info.stopName = obj.commonName;
+			else
+			if (parent && parent.commonName)
+				info.stopName = parent.commonName;
+			else
+				info.stopName = "";
+
+			var props = Parser.getAdditionalProperties(obj);
+			if (props.towards)
+				info.dir = props.towards;
+			else
+			if (props.direction)
+				info.dir = props.direction;
+
+			// TODO - rename "lines" and "ids"
+			info.lines = [];
+			//info.ids = [];
+			for (var line of obj.lines) {
+				if (line.name)
+					info.lines.push(line.name);
+				//if (line.id)
+				//	info.ids.push(line.id);
+			}
+			
+			if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
+				info.id = obj.stationNaptan;
+			else
+			if (obj.naptanId)
+				info.id = obj.naptanId;
+			else
+			if (obj.id)
+				info.id = obj.id;
+			else
+			if (obj.stationNaptan)
+				info.id = obj.stationNaptan;
+			else
+				info.id = null;			// what to do here if there is no id ?
+		}
+		return info;
+	}
+
+	static getStopPointInfo_recurse(obj, parent, result)
+	{
+		if (obj.children && obj.children.length > 0) {
+			for (var child of obj.children) {
+				Parser.getStopPointInfo_recurse(child, obj, result);
+			}
+		} else {
+			var leaf_info = Parser.getStopPointLeafInfo(obj, parent);
+			if (leaf_info.id && !isDuplicate(result, leaf_info)) {
+				result.push(leaf_info);
+			}
 		}
 	}
-	return names;
 }
 
 function getInfoFromSearchMatches(obj)
@@ -23,29 +150,7 @@ function getInfoFromSearchMatches(obj)
 			if (!match.id) {
 				console.log("getInfoFromSearchMatches(): id not in match");
 			} else {
-				var info = {};
-				info.id = match.id;
-				if (match.towards) {
-					info.towards = match.towards;
-				}
-				if (match.name) {
-					info.name = match.name;
-				}
-				if (match.stopLetter) {
-					info.stopLetter = match.stopLetter;
-				}
-				if (match.lines && match.lines.length > 0) {
-					info.lines = getLineNames(match.lines);
-				}
-				if (match.modes && match.modes.length > 0) {
-					info.modes = match.modes;
-				}
-				
-				/* hack - we assume this mismatch means we can use "id" directly as arrivals id */
-				if (match.topMostParentId && match.topMostParentId != match.id)
-					info.idUsable = true;
-				else
-					info.idUsable = false;
+				let info = Parser.getInfoFromSearchMatch(match);
 				ret.push(info);
 			}
 		}
@@ -55,87 +160,15 @@ function getInfoFromSearchMatches(obj)
 	return ret;
 }
 
-function getAdditionalProperties(obj)
+function getStopPointInfo(obj)
 {
-	var info = {};
-	if (obj.additionalProperties && obj.additionalProperties.length > 0) {
-		for (var prop of obj.additionalProperties) {
-			if (prop.category) {
-				switch (prop.category) {
-				case "Geo":
-					if (prop.key && prop.key == "Zone") {
-						info.zone = prop.value;
-					}
-					break;
-				case "Direction":
-					if (prop.key) {
-						switch (prop.key) {
-						case "CompassPoint":
-							info.direction = prop.value;
-							break;
-						case "Towards":
-							info.towards = prop.value;
-							break;
-						}
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		}
-	}
-	return info;
-}
-
-function getStopPointLeafInfo(obj, parent)
-{
-	var info = {};
-
-	if (obj.lines && obj.lines.length > 0) {
-		if (obj.stopLetter)
-			info.stopName = "Stop " + obj.stopLetter;
-		else
-		if (obj.commonName)
-			info.stopName = obj.commonName;
-		else
-		if (parent && parent.commonName)
-			info.stopName = parent.commonName;
-		else
-			info.stopName = "";
-
-		var props = getAdditionalProperties(obj);
-		if (props.towards)
-			info.dir = props.towards;
-		else
-		if (props.direction)
-			info.dir = props.direction;
-
-		// TODO - rename "lines" and "ids"
-		info.lines = [];
-		//info.ids = [];
-		for (var line of obj.lines) {
-			if (line.name)
-				info.lines.push(line.name);
-			//if (line.id)
-			//	info.ids.push(line.id);
-		}
-		
-		if (obj.stopType == "NaptanMetroPlatform")	// TODO - better way?
-			info.id = obj.stationNaptan;
-		else
-		if (obj.naptanId)
-			info.id = obj.naptanId;
-		else
-		if (obj.id)
-			info.id = obj.id;
-		else
-		if (obj.stationNaptan)
-			info.id = obj.stationNaptan;
-		else
-			info.id = null;			// what to do here if there is no id ?
-	}
-	return info;
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: obj", obj);
+	var info = [];
+	Parser.getStopPointInfo_recurse(obj, null, info);
+	if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: return info", info);
+	return { name: obj.commonName, info: info };
 }
 
 function compareEqual(obj1, obj2)
@@ -166,30 +199,5 @@ function isDuplicate(list, obj)
 		}
 	}
 	return false;
-}
-
-function getStopPointInfo_recurse(obj, parent, result)
-{
-	if (obj.children && obj.children.length > 0) {
-		for (var child of obj.children) {
-			getStopPointInfo_recurse(child, obj, result);
-		}
-	} else {
-		var leaf_info = getStopPointLeafInfo(obj, parent);
-		if (leaf_info.id && !isDuplicate(result, leaf_info)) {
-			result.push(leaf_info);
-		}
-	}
-}
-
-function getStopPointInfo(obj)
-{
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: obj", obj);
-	var info = [];
-	getStopPointInfo_recurse(obj, null, info);
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: return info", info);
-	return { name: obj.commonName, info: info };
 }
 

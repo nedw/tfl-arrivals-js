@@ -340,9 +340,9 @@ function setStopPointHighlight(ele)
 	highlightedStopPointRow = ele;
 }
 
-function stopPointOnClick(event, row)
+function stopPointOnClick(event, rowStr)
 {
-	let row = parseInt(row, 10);
+	let row = parseInt(rowStr, 10);
 	if (debug & DEBUG_REQUEST)
 		console.log("stopPointOnClick: ", row);
 	//var rowEle = event.target.parentNode;
@@ -361,7 +361,7 @@ function displayStopPointInfo(info)
 		console.log("displayStopPointInfo: ", info);
 	let s = formatStopPointFrame(info);
 	stopPointInfoDiv.innerHTML = s;
-	initSelect();
+	selector.initSelect("");
 }
 
 function setCurrentStopPointInfo(info)

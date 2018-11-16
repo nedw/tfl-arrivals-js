@@ -29,6 +29,7 @@ class Storage {
 			this.loadStopPoints();
 		}
 		this.storeStopPoints(stopPoints);
+		this.stopPoints = stopPoints;
 	}
 
 	getStopPoints()
@@ -69,8 +70,9 @@ function savedOnClick(ev)
 		console.log("savedOnClick", savedStopPoints);
 		let tableData = generateStopPointTable(savedStopPoints);
 		let s = '<p>Saved Stop Points:';
-		s += formatTable(tableData, 'savedStopPointOnClick', true);
+		s += Formatter.formatTable("", tableData, 'savedStopPointOnClick', true);
 		setSavedStopPointDiv(s);
+		selector.initSelect("");
 	}
 }
 
