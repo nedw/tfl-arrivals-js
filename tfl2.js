@@ -36,11 +36,10 @@ const debug = 0;
 
 const CLASS_HIGHLIGHT = "highlight";
 
-var busStopInfoDiv = null;
-var arrivalsInfoDiv = null;
-var selectionInfoDiv = null;
-var stopPointInfoDiv = null;
-var savedStopPointDiv = null;
+var arrivalsInfoFrame = null;
+var selectionInfoFrame = null;
+var stopPointInfoFrame = null;
+var savedStopPointFrame = null;
 
 var searchTextEl = null;
 var displayNightBuses = false;
@@ -93,20 +92,25 @@ class Request {
 
 var readyStateNames = [ "", "(Opened)", "(Headers received)", "(Loading)", "(Done)" ];
 
-function displayRequestStatus(div, req)
+function displayRequestStatus(frame, req)
 {
 	if (req.readyState > 0 && req.readyState < readyStateNames.length ) {
-		div.innerHTML = "<p>" + readyStateNames[req.readyState];
+		frame.setHTML("<p>" + readyStateNames[req.readyState]);
 	}
 }
 
 function bodyLoadedEvent(event)
 {
-	busStopInfoDiv = document.getElementById("busStopInfoDiv");
-	arrivalsInfoDiv = document.getElementById("arrivalsInfoDiv");
-	selectionInfoDiv = document.getElementById("selectionInfoDiv");
-	stopPointInfoDiv = document.getElementById("stopPointInfoDiv");
-	savedStopPointDiv = document.getElementById("savedStopPointDiv");
+	selectionInfoFrame = new Frame("selectionInfoDiv");
+	stopPointInfoFrame = new Frame("stopPointInfoDiv");
+	arrivalsInfoFrame = new Frame("arrivalsInfoDiv");
+	savedStopPointFrame = new Frame("savedStopPointDiv");
+
+	selectionInfoFrame.addToBody();
+	stopPointInfoFrame.addToBody();
+	arrivalsInfoFrame.addToBody();
+	savedStopPointFrame.addToBody();
+
 	searchTextEl = document.getElementById("searchText");
 	storage.loadStopPoints();
 }
@@ -184,8 +188,7 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
 		const s = formatArrivalsInfo(arrivalsObj);
-		arrivalsInfoDiv.innerHTML = s;
-
+		arrivalsInfoFrame.setHTML(s);
 	} else {
 		arrivalsError(status);
 	}
@@ -194,7 +197,7 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 function arrivalPredictionsStatusCb(req)
 {
 	//console.log("arrivalPredictionsStatusCb(", req, ")");
-	displayRequestStatus(arrivalsInfoDiv, req);
+	displayRequestStatus(arrivalsInfoFrame, req);
 }
 
 function requestArrivalPredictions(id)
@@ -218,13 +221,13 @@ function requestStopPointInfo(id)
 
 function searchOnChange(ev)
 {
-	resetDivs();
+	resetFrames();
 	requestTextSearchMatches(ev.target.value);
 }
 
 function searchSubmitOnClick(ev)
 {
-	resetDivs();
+	resetFrames();
 	console.log(searchTextEl.value);
 	requestTextSearchMatches(searchTextEl.value);
 }
@@ -253,13 +256,13 @@ function searchError(status)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("searchError(", status, ")");
-	selectionInfoDiv.innerHTML = "<b>Search Error " + status;
+	selectionInfoFrame.setHTML("<b>Search Error " + status);
 }
 
 function displaySearchResults(info)
 {
 	var s = formatSearchResults(info);
-	selectionInfoDiv.innerHTML = s;
+	selectionInfoFrame.setHTML(s);
 }
 
 function searchResultCb(status, matchesObj)
@@ -272,12 +275,9 @@ function searchResultCb(status, matchesObj)
 		setCurrentSearchResultsInfo(info);
 		if (info.length == 1 && info[0].idUsable) {
 			displaySearchResults(info);
-			resetArrivalsDiv();
-			resetStopPointDiv();
+			resetArrivalsFrame();
+			resetStopPointFrame();
 			requestStopPointInfo(info[0].id);
-			//const s = formatBusStopInfo(info[0]);
-			//busStopInfoDiv.innerHTML = s;
-
 			requestArrivalPredictions(info[0].id);
 		} else {
 			displaySearchResults(info);
@@ -289,29 +289,28 @@ function searchResultCb(status, matchesObj)
 function searchStatusCb(req)
 {
 	//console.log("Search status: readyState", req.readyState, "status", req.status);
-	displayRequestStatus(selectionInfoDiv, req);
-
+	displayRequestStatus(selectionInfoFrame, req);
 }
 //
 // HTML callbacks
 //
-function resetArrivalsDiv()
+
+function resetArrivalsFrame()
 {
-	arrivalsInfoDiv.innerHTML = "";
+	arrivalsInfoFrame.clear();
 }
 
-function resetStopPointDiv()
+function resetStopPointFrame()
 {
-	stopPointInfoDiv.innerHTML = "";
+	stopPointInfoFrame.clear();
 }
 
-function resetDivs()
+function resetFrames()
 {
 
-	busStopInfoDiv.innerHTML = "";
-	selectionInfoDiv.innerHTML = "";
-	resetStopPointDiv();
-	resetArrivalsDiv();
+	selectionInfoFrame.clear();
+	resetStopPointFrame();
+	resetArrivalsFrame();
 }
 
 function arrivalsRequestOnClick()
@@ -322,9 +321,9 @@ function arrivalsRequestOnClick()
 	}
 }
 
-function getTableRowElement(div, row)
+function getTableRowElement(frame, row)
 {
-	let rowEles = div.getElementsByTagName("tr");
+	let rowEles = frame.getElementsByTag("tr");
 	return rowEles[row];
 }
 
@@ -347,9 +346,9 @@ function stopPointOnClick(event, rowStr)
 		console.log("stopPointOnClick: ", row);
 	//var rowEle = event.target.parentNode;
 	if (!targetIsCheckbox(event)) {
-		let rowEle = getTableRowElement(stopPointInfoDiv, row);
+		let rowEle = getTableRowElement(stopPointInfoFrame, row);
 		setStopPointHighlight(rowEle);
-		resetArrivalsDiv();
+		resetArrivalsFrame();
 		let id = getCurrentStopPointInfo().info[row].id;
 		requestArrivalPredictions(id);
 	}
@@ -360,7 +359,7 @@ function displayStopPointInfo(info)
 	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", info);
 	let s = formatStopPointFrame(info);
-	stopPointInfoDiv.innerHTML = s;
+	stopPointInfoFrame.setHTML(s);
 	selector.initSelect("");
 }
 
@@ -386,14 +385,14 @@ function stopPointResultCb(status, stopPointObj)
 		setCurrentStopPointInfo(info);	// save away stop point list
 		displayStopPointInfo(info.info);
 	} else {
-		stopPointInfoDiv.innerHTML = "Stop Point Error " + status;
+		stopPointInfoFrame.setHTML("Stop Point Error " + status);
 		setCurrentStopPointInfo(null);
 	}
 }
 
 function stopPointStatusCb(req)
 {
-	displayRequestStatus(stopPointInfoDiv, req);
+	displayRequestStatus(stopPointInfoFrame, req);
 }
 
 function searchOnClick(event, row)
@@ -403,8 +402,8 @@ function searchOnClick(event, row)
 		console.log("searchOnClick", row);
 	let rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
-	resetArrivalsDiv();
-	resetStopPointDiv();
+	resetArrivalsFrame();
+	resetStopPointFrame();
 
 	stopPointReq = new Request();
 	let id = getCurrentSearchResultsInfo()[row].id;
