@@ -46,35 +46,3 @@ class Storage {
 
 var storage = new Storage();
 
-//
-// Called from "Saved" button beside search text
-//
-
-function savedOnClick(ev)
-{
-	if (savedStopPointInfoVisible) {
-		console.log("savedOnClick: visible - hiding");
-		resetSavedStopPointFrame();
-		savedStopPointInfoVisible = false;
-	} else {
-		let savedStopPoints = storage.getStopPoints();
-		console.log("savedOnClick: not visible - exposing", savedStopPoints);
-		let tableData = generateStopPointTable(savedStopPoints);
-		let s = '<p>Saved Stop Points:';
-		savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'selectOnChange')
-		savedStopPointFrame.setHTML(s);
-		savedStopPointFrame.appendNode(savedStopPointTable.getNode());
-		savedStopPointInfoVisible = true;
-	}
-}
-
-function savedStopPointOnClick(ev, row)
-{
-	console.log("savedStopPointOnClick:", ev, row);
-	let info = storage.getStopPoints();
-	setCurrentStopPointInfo( { name: "", info: info } );
-	resetSavedStopPointFrame();
-	savedStopPointInfoVisible = false;
-	displayStopPointInfo(info);
-	stopPointOnClick(ev, row);
-}

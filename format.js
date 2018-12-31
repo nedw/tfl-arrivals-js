@@ -98,11 +98,11 @@ function formatStopPointFrame(frame, info)
 {
 	// "Select" and "+" buttons
 	var s = Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
-			Formatter.formatButton("Save",   "addButtonOnClick")    +
+			Formatter.formatButton("Save",   "saveButtonOnClick")    +
 			'<br>';
 
 	let tableData = generateStopPointTable(info);
-	stopPointTable = new Table(tableData, 'stopPointOnClick', 'selectOnChange');
+	stopPointTable = new Table(tableData, 'stopPointOnClick', 'checkboxOnChange');
 
 	frame.setHTML(s);
 	frame.appendNode(stopPointTable.getNode());
