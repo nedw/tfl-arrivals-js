@@ -2,6 +2,12 @@
 class Frame {
     constructor() {
         this._div_ele = document.createElement("div");
+        this.setVisibility(false);
+    }
+
+    setVisibility(visible) {
+        //this._div_ele.style.display = visible ? "inline" : "none";
+        //this._visible = visible;
     }
 
     clear() {

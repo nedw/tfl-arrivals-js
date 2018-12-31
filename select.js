@@ -1,16 +1,5 @@
-
-//
-// Called when a checkbox is clicked.
-//
-// Just used to prevent propagation of event to the parent <tr> which would otherwise
-// trigger retrieval of arrivals info for the row in question.
-//
-
-function checkboxOnChange(ev, infoIndex)
-{
-	//console.log("checkboxOnChange(", ev, ",", getCurrentStopPointInfo().info[infoIndex], ")");
-	ev.stopPropagation();
-}
+var savedStopPointTable = null;
+var savedStopPointInfoVisible = false;
 
 //
 // Called when "Select" button in Stop Point frame is cilcked
@@ -22,7 +11,7 @@ function selectButtonOnClick(ev)
 	stopPointTable.toggleCheckBoxVisibility();
 }
 
-function generateSavedStopPoints(stopPointInfo)
+function generateStopPointsToSave(stopPointInfo)
 {
 	let savedStopPoints = storage.getStopPoints();
 	if (savedStopPoints == null)
@@ -48,8 +37,22 @@ function saveButtonOnClick(ev)
 {
 	let stopPointInfo = getCurrentStopPointInfo();
 	console.log("saveButtonOnClick(", ev, "): name ", stopPointInfo.name);
-	let savedStopPoints = generateSavedStopPoints(stopPointInfo);
+	let savedStopPoints = generateStopPointsToSave(stopPointInfo, false);
 	storage.setStopPoints(savedStopPoints);
+}
+
+function generateSavedStopPointTable(savedStopPoints, checkboxesVisible)
+{
+	let tableData = generateStopPointTable(savedStopPoints);
+	savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'Table.checkboxOnChange');
+	if (checkboxesVisible)
+		savedStopPointTable.toggleCheckBoxVisibility();
+	let s = '<p>Saved Stop Points:<br>' + Formatter.formatButton('Select', 'selectSavedOnClick') + '&emsp;' +
+			 Formatter.formatButton('Delete', 'deleteSavedOnClick'); + '<br>';
+	savedStopPointFrame.setVisibility(false);
+	savedStopPointFrame.setHTML(s);
+	savedStopPointFrame.appendNode(savedStopPointTable.getNode());
+	savedStopPointFrame.setVisibility(true);
 }
 
 //
@@ -63,11 +66,7 @@ function savedOnClick(ev)
 		savedStopPointInfoVisible = false;
 	} else {
 		let savedStopPoints = storage.getStopPoints();
-		let tableData = generateStopPointTable(savedStopPoints);
-		let s = '<p>Saved Stop Points:';
-		savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'checkboxOnChange')
-		savedStopPointFrame.setHTML(s);
-		savedStopPointFrame.appendNode(savedStopPointTable.getNode());
+		generateSavedStopPointTable(savedStopPoints, false);
 		savedStopPointInfoVisible = true;
 	}
 }
@@ -85,4 +84,38 @@ function savedStopPointOnClick(ev, row)
 	savedStopPointInfoVisible = false;
 	displayStopPointInfo(info);
 	stopPointOnClick(ev, row);
+}
+
+function selectSavedOnClick(ev)
+{
+	console.log("selectSavedOnClick:", ev);
+	savedStopPointTable.toggleCheckBoxVisibility();
+}
+
+function generateStopPointsToDelete()
+{
+	let savedStopPoints = storage.getStopPoints();
+	if (savedStopPoints == null)
+		savedStopPoints = [];
+
+	for (let i = 0 ; i < savedStopPointTable.rows() ; ++i) {
+		if (savedStopPointTable.isCheckboxChecked(i))
+			savedStopPoints[i] = null;
+	}
+
+	for (let i = 0 ; i < savedStopPoints.length ; ) {
+		if (!savedStopPoints[i])
+			savedStopPoints.splice(i, 1);
+		else
+			++i;
+	}
+
+	storage.setStopPoints(savedStopPoints);
+	generateSavedStopPointTable(savedStopPoints, true);
+}
+
+function deleteSavedOnClick(ev)
+{
+	console.log("deleteSavedOnClick:", ev);
+	generateStopPointsToDelete();
 }

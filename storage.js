@@ -1,6 +1,3 @@
-var savedStopPointTable = null;
-var savedStopPointInfoVisible = false;
-
 class Storage {
 	constructor()
 	{

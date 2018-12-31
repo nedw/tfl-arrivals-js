@@ -8,11 +8,32 @@ class Table {
         this._table_ele.innerHTML = s;
         this._rows = tableData.length;
 
+        this._table_ele._table = this;
+
+        this.storeCheckboxElements();
+        this.setCheckBoxVisibility(false);
+    }
+
+    //
+    // Utility functions that can be used when a checkbox is clicked or changed.
+    //
+    // Just used to prevent propagation of event to the parent <tr> which would otherwise
+    // trigger the row on-click method.
+    //
+
+    static checkboxOnClick(ev, row) {
+        //console.log("Table.checkboxOnClick:", ev, row);
+        ev.stopPropagation();
+    }
+
+    static checkboxOnChange(ev, row) {
+        //console.log("Table.checkboxOnChange:", ev, row);
+        ev.stopPropagation();
+    }
+
+    storeCheckboxElements() {
         this._selectionHideEles = this._table_ele.getElementsByClassName('selectClass');
         this._selectionCheckboxEles = this._table_ele.getElementsByClassName('selectCheckbox');
-        
-        this._table_ele._table = this;
-        this.setCheckBoxVisibility(false);
     }
 
    	//
@@ -43,7 +64,7 @@ class Table {
             	// If requested, generate a checkbox within a table data cell (normally hidden)
                 //
                 s += '<td class="selectClass" style="display: none">' +
-                `<input type="checkbox" class="selectCheckbox" onchange="${checkChangeCb}(event, ${row})" />` +
+                `<input type="checkbox" class="selectCheckbox" onchange="${checkChangeCb}(event, ${row})" onclick="Table.checkboxOnClick(event, ${row})" />` +
                 '</td>';
 			}
 
@@ -62,8 +83,9 @@ class Table {
 	}
 
     setCheckBoxVisibility(visible) {
+        console.log("setCheckBoxVisibility():", visible);
         for (var e of this._selectionHideEles) {
-			e.style.display = visible ? "table-cell" : "none";
+            e.style.display = visible ? "table-cell" : "none";
 		}
 
 		if (!visible) {
@@ -75,6 +97,7 @@ class Table {
     }
 
     toggleCheckBoxVisibility() {
+        console.log("toggleCheckBoxVisibility():", this._checkBoxVisible);
         this._checkBoxVisible = !this._checkBoxVisible;
         this.setCheckBoxVisibility(this._checkBoxVisible);
     }

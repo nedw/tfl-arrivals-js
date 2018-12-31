@@ -56,11 +56,13 @@ function generateSearchResultsTable(info)
 function formatSearchResults(frame, info)
 {
 	var tableData = generateSearchResultsTable(info);
+	frame.setVisibility(false);
 	var s = '<p>Search Results:<br>';
 	frame.setHTML(s);
 
 	searchTable = new Table(tableData, 'searchOnClick', null);
 	frame.appendNode(searchTable.getNode());
+	frame.setVisibility(true);
 }
 
 //
@@ -96,16 +98,19 @@ function generateStopPointTable(info)
 
 function formatStopPointFrame(frame, info)
 {
-	// "Select" and "+" buttons
-	var s = Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
+	let tableData = generateStopPointTable(info);
+	stopPointTable = new Table(tableData, 'stopPointOnClick', 'Table.checkboxOnChange');
+
+	frame.setVisibility(false);
+	// "Select" and "Save" buttons
+	var s = '<p>' +
+			Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
 			Formatter.formatButton("Save",   "saveButtonOnClick")    +
 			'<br>';
 
-	let tableData = generateStopPointTable(info);
-	stopPointTable = new Table(tableData, 'stopPointOnClick', 'checkboxOnChange');
-
-	frame.setHTML(s);
+	frame.setHTML('<p>Stop Points:<br>' + s);
 	frame.appendNode(stopPointTable.getNode());
+	frame.setVisibility(true);
 }
 
 /*
@@ -184,6 +189,7 @@ function formatArrivalsInfo(frame, info)
 	if (debug & DEBUG_REQUEST)
 		console.log("formatArrivalsInfo: ", info);
 	var s;
+	frame.setVisibility(false);
 	if (info.length > 0) {
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
 		let tableData = generateArrivalsInfoTable(info);
@@ -193,8 +199,9 @@ function formatArrivalsInfo(frame, info)
 		s = '';
 	} else
 		s = '<p>(No arrivals information)<br>';
-	s += Formatter.formatButton("Refresh", "arrivalsRequestOnClick");
+	s += '<p>' + Formatter.formatButton("Refresh", "arrivalsRequestOnClick");
 	frame.appendHTML(s);
+	frame.setVisibility(true);
 	return s;
 }
 
