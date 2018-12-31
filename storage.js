@@ -1,3 +1,6 @@
+var savedStopPointTable = null;
+var savedStopPointInfoVisible = false;
+
 class Storage {
 	constructor()
 	{
@@ -42,20 +45,6 @@ class Storage {
 }
 
 var storage = new Storage();
-var savedStopPointInfoVisible = false;
-
-function setSavedStopPointDiv(s)
-{
-	savedStopPointDiv.innerHTML = s;
-	if (s)
-		savedStopPointInfoVisible = true;
-}
-
-function resetSavedStopPointDiv()
-{
-	setSavedStopPointDiv("");
-	savedStopPointInfoVisible = false;
-}
 
 //
 // Called from "Saved" button beside search text
@@ -64,15 +53,18 @@ function resetSavedStopPointDiv()
 function savedOnClick(ev)
 {
 	if (savedStopPointInfoVisible) {
-		resetSavedStopPointDiv();
+		console.log("savedOnClick: visible - hiding");
+		resetSavedStopPointFrame();
+		savedStopPointInfoVisible = false;
 	} else {
 		let savedStopPoints = storage.getStopPoints();
-		console.log("savedOnClick", savedStopPoints);
+		console.log("savedOnClick: not visible - exposing", savedStopPoints);
 		let tableData = generateStopPointTable(savedStopPoints);
 		let s = '<p>Saved Stop Points:';
-		s += Formatter.formatTable("", tableData, 'savedStopPointOnClick', true);
-		setSavedStopPointDiv(s);
-		selector.initSelect("");
+		savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'selectOnChange')
+		savedStopPointFrame.setHTML(s);
+		savedStopPointFrame.appendNode(savedStopPointTable.getNode());
+		savedStopPointInfoVisible = true;
 	}
 }
 
@@ -81,7 +73,8 @@ function savedStopPointOnClick(ev, row)
 	console.log("savedStopPointOnClick:", ev, row);
 	let info = storage.getStopPoints();
 	setCurrentStopPointInfo( { name: "", info: info } );
-	resetSavedStopPointDiv();
+	resetSavedStopPointFrame();
+	savedStopPointInfoVisible = false;
 	displayStopPointInfo(info);
 	stopPointOnClick(ev, row);
 }

@@ -101,10 +101,10 @@ function displayRequestStatus(frame, req)
 
 function bodyLoadedEvent(event)
 {
-	selectionInfoFrame = new Frame("selectionInfoDiv");
-	stopPointInfoFrame = new Frame("stopPointInfoDiv");
-	arrivalsInfoFrame = new Frame("arrivalsInfoDiv");
-	savedStopPointFrame = new Frame("savedStopPointDiv");
+	selectionInfoFrame = new Frame();
+	stopPointInfoFrame = new Frame();
+	arrivalsInfoFrame = new Frame();
+	savedStopPointFrame = new Frame();
 
 	selectionInfoFrame.addToBody();
 	stopPointInfoFrame.addToBody();
@@ -187,8 +187,7 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 		console.log("arrivalPredictionsResultCb", arrivalsObj);
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
-		const s = formatArrivalsInfo(arrivalsObj);
-		arrivalsInfoFrame.setHTML(s);
+		formatArrivalsInfo(arrivalsInfoFrame, arrivalsObj);
 	} else {
 		arrivalsError(status);
 	}
@@ -261,8 +260,7 @@ function searchError(status)
 
 function displaySearchResults(info)
 {
-	var s = formatSearchResults(info);
-	selectionInfoFrame.setHTML(s);
+	formatSearchResults(selectionInfoFrame, info);
 }
 
 function searchResultCb(status, matchesObj)
@@ -303,6 +301,11 @@ function resetArrivalsFrame()
 function resetStopPointFrame()
 {
 	stopPointInfoFrame.clear();
+}
+
+function resetSavedStopPointFrame()
+{
+	savedStopPointFrame.clear();
 }
 
 function resetFrames()
@@ -358,9 +361,7 @@ function displayStopPointInfo(info)
 {
 	if (debug & DEBUG_DISPLAY)
 		console.log("displayStopPointInfo: ", info);
-	let s = formatStopPointFrame(info);
-	stopPointInfoFrame.setHTML(s);
-	selector.initSelect("");
+	formatStopPointFrame(stopPointInfoFrame, info);
 }
 
 function setCurrentStopPointInfo(info)

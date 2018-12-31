@@ -1,72 +1,11 @@
+var searchTable = null;
+var stopPointTable = null;
+var arrivalsTable = null;
+
 class Formatter {
 	static formatButton(value, callback)
 	{
 		return `<input type="button" value="${value}" onClick="${callback}(event)" />`;
-	}
-
-	//
-	// Given func and arg parameters, generate a table row of the form:
-	//
-	//	<tr onclick='<func>(event, <arg>)'>
-	//
-
-	static formatTableRowOnClick(func, arg)
-	{
-		return `<tr onclick="${func}(event, ${arg})">`;
-	}
-
-	//
-	// Generate a checkbox within a table data cell of the form:
-	//
-	//	<td class="<prefix>SelectClass">
-	//	<input type="checkbox" class="<prefix>SelectCheckbox"  onchange="selectOnChange(event, <i>)" />
-	//	</td>
-	//
-	// Where 'prefix' and 'i' are parameters.
-	//
-
-
-	static formatCheckBoxSelectCell(prefix, i)
-	{
-		let [selectClass, selectCheckbox, selectOnChange] = Selector.cellAttributes(prefix);
-		return `<td class="${selectClass}" style="display: none">` +
-			   `<input type="checkbox" class="${selectCheckbox}" onchange="${selectOnChange}(event, ${i})" /></td>`;
-	}
-
-	//
-	// Generate a table from a two dimensional array of strings, where each element represents a table
-	// data cell.  Each row can have a variable number of columns, ie:
-	//
-	// tableData: [
-	//			  [ col1, col2, ..., colM ],
-	//			  [ col1, col2, ..., colN ],
-	//			       ...
-	//			  ]
-	//
-
-	static formatTable(prefix, tableData, rowOnClick, isSelectable)
-	{
-		var s = '<table border="1">';
-
-		for (var rowIndex = 0 ; rowIndex < tableData.length ; rowIndex++) {
-			if (rowOnClick)
-				s += Formatter.formatTableRowOnClick(rowOnClick, rowIndex);
-			else
-				s += '<tr>';
-			
-			for (var colIndex = 0 ; colIndex < tableData[rowIndex].length ; colIndex++) {
-				s += `<td>${tableData[rowIndex][colIndex]}</td>`;
-			}
-
-			if (isSelectable) {
-				// Select check box (normally hidden)
-				s += Formatter.formatCheckBoxSelectCell(prefix, rowIndex);
-			}
-
-			s += '</tr>'
-		}
-		s += '</table>';
-		return s;
 	}
 }
 
@@ -114,11 +53,14 @@ function generateSearchResultsTable(info)
 	return tableData;
 }
 
-function formatSearchResults(info)
+function formatSearchResults(frame, info)
 {
 	var tableData = generateSearchResultsTable(info);
-	var s = '<p>Search Results:<br>' + Formatter.formatTable("", tableData, 'searchOnClick', false);
-	return s;
+	var s = '<p>Search Results:<br>';
+	frame.setHTML(s);
+
+	searchTable = new Table(tableData, 'searchOnClick', null);
+	frame.appendNode(searchTable.getNode());
 }
 
 //
@@ -152,23 +94,18 @@ function generateStopPointTable(info)
 	return tableData;
 }
 
-function formatStopPointInfo(info)
-{
-	let tableData = generateStopPointTable(info);
-
-	let s = Formatter.formatTable("", tableData, 'stopPointOnClick', true);
-	return s;
-}
-
-function formatStopPointFrame(info)
+function formatStopPointFrame(frame, info)
 {
 	// "Select" and "+" buttons
 	var s = Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
 			Formatter.formatButton("Save",   "addButtonOnClick")    +
 			'<br>';
 
-	s += formatStopPointInfo(info)
-	return s;
+	let tableData = generateStopPointTable(info);
+	stopPointTable = new Table(tableData, 'stopPointOnClick', 'selectOnChange');
+
+	frame.setHTML(s);
+	frame.appendNode(stopPointTable.getNode());
 }
 
 /*
@@ -220,24 +157,6 @@ function formatTimeToStationStr(t)
 	return "" + min + ":" + (sec10 ? sec10 * 10 : "00");
 }
 
-/*
-function formatBusStopInfo(info)
-{
-	var s = "<p>";
-	if (info.name)
-		s += info.name;
-	if (info.stopLetter)
-		s += " (stop " + info.stopLetter + ")";
-	if (info.lines) {
-		s += "<br>" + info.lines.join(", ");
-	}
-	if (info.towards) {
-		s += " - " + info.towards;
-	}
-	return s;
-}
-*/
-
 //
 // Arrivals info formatting
 //
@@ -260,19 +179,22 @@ function generateArrivalsInfoTable(info)
 	return tableData;
 }
 
-function formatArrivalsInfo(info)
+function formatArrivalsInfo(frame, info)
 {
 	if (debug & DEBUG_REQUEST)
 		console.log("formatArrivalsInfo: ", info);
-	var s = '<p>Arrivals:';
+	var s;
 	if (info.length > 0) {
-		s += '<br>';
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
 		let tableData = generateArrivalsInfoTable(info);
-		s += Formatter.formatTable("", tableData, null, false);
+		arrivalsTable = new Table(tableData, null, null);
+		arrivalsInfoFrame.setHTML('<p>Arrivals:<br>');
+		arrivalsInfoFrame.appendNode(arrivalsTable.getNode());
+		s = '';
 	} else
 		s = '<p>(No arrivals information)<br>';
 	s += Formatter.formatButton("Refresh", "arrivalsRequestOnClick");
+	frame.appendHTML(s);
 	return s;
 }
 

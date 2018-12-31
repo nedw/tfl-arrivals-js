@@ -1,8 +1,15 @@
 
 class Frame {
-    constructor(id) {
+    constructor() {
         this._div_ele = document.createElement("div");
-        this._div_ele.id = id;
+    }
+
+    clear() {
+        this._div_ele.innerHTML = "";
+    }
+
+    setHTML(s) {
+        this._div_ele.innerHTML = s;
     }
 
     // Note: slow - use sparingly
@@ -10,12 +17,8 @@ class Frame {
         this._div_ele.innerHTML += s;
     }
 
-    setHTML(s) {
-        this._div_ele.innerHTML = s;
-    }
-
-    clear() {
-        this._div_ele.innerHTML = "";
+    appendNode(node) {
+        this._div_ele.appendChild(node);
     }
 
     getElementsByTag(tag) {
