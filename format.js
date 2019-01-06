@@ -69,7 +69,7 @@ function formatSearchResults(frame, info)
 // Functions for formatting Stop Point information
 //
 
-function generateStopPointTable(info)
+function generateStopPointTable(info, useName)
 {
 	let tableData = [];
 
@@ -77,6 +77,8 @@ function generateStopPointTable(info)
 		// Table of stop points
 		for (var i = 0 ; i < info.length ; i++) {
 			var stop = info[i];
+
+				
 
 			var lines;
 			if (stop.lines)
@@ -90,7 +92,10 @@ function generateStopPointTable(info)
 			else
 				dir = '';
 			
-			tableData.push( [ stop.stopName,  lines, dir ] );
+			if (useName)
+				tableData.push( [ stop.name ? stop.name : "", stop.stopName,  lines, dir ] );
+			else
+				tableData.push( [ stop.stopName,  lines, dir ] );
 		}
 	}
 	return tableData;
@@ -98,7 +103,7 @@ function generateStopPointTable(info)
 
 function formatStopPointFrame(frame, info)
 {
-	let tableData = generateStopPointTable(info);
+	let tableData = generateStopPointTable(info, false);
 	stopPointTable = new Table(tableData, 'stopPointOnClick', 'Table.checkboxOnChange');
 
 	frame.setVisibility(false);

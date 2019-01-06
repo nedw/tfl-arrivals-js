@@ -7,11 +7,11 @@ var savedStopPointInfoVisible = false;
 
 function selectButtonOnClick(ev)
 {
-	console.log("selectButtonOnClick(", ev, ")");
+	//console.log("selectButtonOnClick(", ev, ")");
 	stopPointTable.toggleCheckBoxVisibility();
 }
 
-function generateStopPointsToSave(stopPointInfo)
+function generateStopPointsToSave(stopPointTable, stopPointInfo)
 {
 	let savedStopPoints = storage.getStopPoints();
 	if (savedStopPoints == null)
@@ -20,12 +20,17 @@ function generateStopPointsToSave(stopPointInfo)
 	for (let i = 0 ; i < stopPointTable.rows() ; i++) {
 		if (stopPointTable.isCheckboxChecked(i)) {
 			let info = stopPointInfo.info[i];
-			console.log("Saving", info);
+			//console.log("Saving", info);
 			let obj = savedStopPoints.find(o => o.id == info.id);
 			if (!obj)
-				savedStopPoints.push(info);
+				savedStopPoints.push( { name: stopPointInfo.name, ...info} );
 		}
 	}
+
+	//
+	// sort according to 'name' property
+	//
+	savedStopPoints.sort((a, b) => (a.name == b.name) ? 0 : (a.name < b.name) ? -1 : 1);
 	return savedStopPoints;
 }
 
@@ -36,14 +41,14 @@ function generateStopPointsToSave(stopPointInfo)
 function saveButtonOnClick(ev)
 {
 	let stopPointInfo = getCurrentStopPointInfo();
-	console.log("saveButtonOnClick(", ev, "): name ", stopPointInfo.name);
-	let savedStopPoints = generateStopPointsToSave(stopPointInfo, false);
+	//console.log("saveButtonOnClick(", ev, "): name ", stopPointInfo.name);
+	let savedStopPoints = generateStopPointsToSave(stopPointTable, stopPointInfo);
 	storage.setStopPoints(savedStopPoints);
 }
 
 function generateSavedStopPointTable(savedStopPoints, checkboxesVisible)
 {
-	let tableData = generateStopPointTable(savedStopPoints);
+	let tableData = generateStopPointTable(savedStopPoints, true);
 	savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'Table.checkboxOnChange');
 	if (checkboxesVisible)
 		savedStopPointTable.toggleCheckBoxVisibility();
@@ -77,7 +82,6 @@ function savedOnClick(ev)
 
 function savedStopPointOnClick(ev, row)
 {
-	console.log("savedStopPointOnClick:", ev, row);
 	let info = storage.getStopPoints();
 	setCurrentStopPointInfo( { name: "", info: info } );
 	resetSavedStopPointFrame();
@@ -88,7 +92,6 @@ function savedStopPointOnClick(ev, row)
 
 function selectSavedOnClick(ev)
 {
-	console.log("selectSavedOnClick:", ev);
 	savedStopPointTable.toggleCheckBoxVisibility();
 }
 
@@ -116,6 +119,5 @@ function generateStopPointsToDelete()
 
 function deleteSavedOnClick(ev)
 {
-	console.log("deleteSavedOnClick:", ev);
 	generateStopPointsToDelete();
 }

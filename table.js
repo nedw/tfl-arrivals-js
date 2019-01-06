@@ -83,7 +83,6 @@ class Table {
 	}
 
     setCheckBoxVisibility(visible) {
-        console.log("setCheckBoxVisibility():", visible);
         for (var e of this._selectionHideEles) {
             e.style.display = visible ? "table-cell" : "none";
 		}
@@ -97,7 +96,6 @@ class Table {
     }
 
     toggleCheckBoxVisibility() {
-        console.log("toggleCheckBoxVisibility():", this._checkBoxVisible);
         this._checkBoxVisible = !this._checkBoxVisible;
         this.setCheckBoxVisibility(this._checkBoxVisible);
     }
