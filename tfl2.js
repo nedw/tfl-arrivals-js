@@ -105,11 +105,13 @@ function bodyLoadedEvent(event)
 	stopPointInfoFrame = new Frame();
 	arrivalsInfoFrame = new Frame();
 	savedStopPointFrame = new Frame();
+	disruptions.bodyLoaded();
 
 	selectionInfoFrame.addToBody();
 	stopPointInfoFrame.addToBody();
 	arrivalsInfoFrame.addToBody();
 	savedStopPointFrame.addToBody();
+	disruptions.getFrame().addToBody();
 
 	searchTextEl = document.getElementById("searchText");
 	storage.loadStopPoints();

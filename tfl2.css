@@ -30,3 +30,63 @@ input {
 .highlight {
 	font-weight: bold;
 }
+
+/*
+ * Definitions for disruptions
+ */
+
+.disrupt_para {
+	font-size: 1.5em;
+}
+
+.line_box {
+	color: white
+}
+
+.bakerloo {
+	background-color: rgb(178, 99, 0)
+}
+
+.hammersmith_city {
+	background-color: rgb(244, 169, 190)
+}
+
+.piccadilly {
+	background-color: rgb(0, 25, 168)
+}
+
+.central {
+	background-color: rgb(220, 36, 31)
+}
+
+.jubilee {
+	background-color: rgb(161, 165, 167)
+}
+
+.victoria {
+	background-color: rgb(0, 152, 216)
+}
+
+.circle {
+	background-color: rgb(255, 211, 41)
+}
+
+.metropolitan {
+	background-color: rgb(155, 0, 88)
+}
+
+.waterloo_city {
+	background-color: rgb(147, 206, 186)
+}
+
+.district {
+	background-color: rgb(0, 125, 50)
+}
+
+.northern {
+	background-color: rgb(0, 0, 0)
+}
+
+.overground {
+	background-color: rgb(239, 123, 16)
+}
