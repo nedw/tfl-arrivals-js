@@ -1,5 +1,4 @@
 var savedStopPointTable = null;
-var savedStopPointInfoVisible = false;
 
 //
 // Called when "Select" button in Stop Point frame is cilcked
@@ -66,18 +65,12 @@ function generateSavedStopPointTable(savedStopPoints, checkboxesVisible)
 
 function savedOnClick(ev)
 {
-	if (savedStopPointInfoVisible) {
-		//resetSavedStopPointFrame();
-		//savedStopPointInfoVisible = false;
-	} else {
-		searchInfoFrame.clear();
-		let savedStopPoints = storage.getStopPoints();
-		generateSavedStopPointTable(savedStopPoints, false);
-		resetSearchFrame();
-		resetArrivalsFrame();
-		resetStopPointFrame();
-		savedStopPointInfoVisible = true;
-	}
+	searchInfoFrame.clear();
+	let savedStopPoints = storage.getStopPoints();
+	generateSavedStopPointTable(savedStopPoints, false);
+	resetSearchFrame();
+	resetArrivalsFrame();
+	resetStopPointFrame();
 }
 
 //
@@ -90,7 +83,6 @@ function savedStopPointOnClick(ev, row)
 	setCurrentStopPointInfo( { name: "", info: info } );
 	resetSavedStopPointFrame();
 	resetSearchFrame();
-	savedStopPointInfoVisible = false;
 	displayStopPointInfo(info, true);
 	stopPointOnClick(ev, row);
 }

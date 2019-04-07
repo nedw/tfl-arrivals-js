@@ -108,11 +108,11 @@ function formatStopPointFrame(frame, info, displayStopPointName)
 
 	frame.setVisibility(false);
 	// "Select" and "Save" buttons
-	var s = '<p>' +
+	var s = '<br>' +
 			Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
 			Formatter.formatButton("Save",   "saveButtonOnClick");
 
-	frame.setHTML('<p>Stop Points:' + s);
+	frame.setHTML('<p>Stop Points:' + s + '</p>');
 	frame.appendNode(stopPointTable.getNode());
 	frame.setVisibility(true);
 }
