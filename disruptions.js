@@ -50,6 +50,15 @@ class Disruptions {
 		}
 	}
 
+	hashCode(s) {
+		var code = 0;
+		var len = s.length;
+		for (var i = 0 ; i < len ; ++i) {
+			code += ((code << 5) - code) + s.charCodeAt(i) >>> 0;
+		}
+		return code >>> 0;
+	}
+
 	//
 	// Display disruptions request
 	displayResult(obj) {
@@ -68,21 +77,30 @@ class Disruptions {
 		let s;
 		if (obj.length > 0) {
 			s = '<table>';
+			let dups = [];
 			for (let i = 0 ; i < obj.length ; ++i) {
 				let p = obj[i];
-				let closureText = this.insertSpacesBeforeCapitals(p.closureText);
-				let index = p.description.indexOf(':');
-				if (index > 0) {
-					let line = p.description.substring(0, index);
-					let className = this.lineToClass(line);
-					if (className) {
-						s += '<tr><td class="line_box ' + className + '">';
+				//
+				// Check for duplicates - just rely on checking the hash rather than
+				// re-checking the string content as well.
+				//
+				var hash = this.hashCode(p.description);
+				if (dups.indexOf(hash) == -1) {
+					dups.push(hash);
+					let closureText = this.insertSpacesBeforeCapitals(p.closureText);
+					let index = p.description.indexOf(':');
+					if (index > 0) {
+						let line = p.description.substring(0, index);
+						let className = this.lineToClass(line);
+						if (className) {
+							s += '<tr><td class="line_box ' + className + '">';
+						} else {
+							s += "<tr><td>";
+						}
+						s += line + "<td>" + closureText + "<td>" + p.description.substring(index + 1) + "</tr>";
 					} else {
-						s += "<tr><td>";
+						s += "<tr><td>-<td>" + closureText + "<td>" + p.description + "</tr>";
 					}
-					s += line + "<td>" + closureText + "<td>" + p.description.substring(index + 1) + "</tr>";
-				} else {
-					s += "<tr><td>-<td>" + closureText + "<td>" + p.description + "</tr>";
 				}
 			}
 			s += "</table>";
