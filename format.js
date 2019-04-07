@@ -69,7 +69,7 @@ function formatSearchResults(frame, info)
 // Functions for formatting Stop Point information
 //
 
-function generateStopPointTable(info, useName)
+function generateStopPointTable(info, displayStopPointName)
 {
 	let tableData = [];
 
@@ -92,7 +92,7 @@ function generateStopPointTable(info, useName)
 			else
 				dir = '';
 			
-			if (useName)
+			if (displayStopPointName)
 				tableData.push( [ stop.name ? stop.name : "", stop.stopName,  lines, dir ] );
 			else
 				tableData.push( [ stop.stopName,  lines, dir ] );
@@ -101,19 +101,18 @@ function generateStopPointTable(info, useName)
 	return tableData;
 }
 
-function formatStopPointFrame(frame, info)
+function formatStopPointFrame(frame, info, displayStopPointName)
 {
-	let tableData = generateStopPointTable(info, false);
+	let tableData = generateStopPointTable(info, displayStopPointName);
 	stopPointTable = new Table(tableData, 'stopPointOnClick', 'Table.checkboxOnChange');
 
 	frame.setVisibility(false);
 	// "Select" and "Save" buttons
 	var s = '<p>' +
 			Formatter.formatButton("Select", "selectButtonOnClick") + '&emsp;' +
-			Formatter.formatButton("Save",   "saveButtonOnClick")    +
-			'<br>';
+			Formatter.formatButton("Save",   "saveButtonOnClick");
 
-	frame.setHTML('<p>Stop Points:<br>' + s);
+	frame.setHTML('<p>Stop Points:' + s);
 	frame.appendNode(stopPointTable.getNode());
 	frame.setVisibility(true);
 }

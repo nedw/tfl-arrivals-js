@@ -67,11 +67,15 @@ function generateSavedStopPointTable(savedStopPoints, checkboxesVisible)
 function savedOnClick(ev)
 {
 	if (savedStopPointInfoVisible) {
-		resetSavedStopPointFrame();
-		savedStopPointInfoVisible = false;
+		//resetSavedStopPointFrame();
+		//savedStopPointInfoVisible = false;
 	} else {
+		searchInfoFrame.clear();
 		let savedStopPoints = storage.getStopPoints();
 		generateSavedStopPointTable(savedStopPoints, false);
+		resetSearchFrame();
+		resetArrivalsFrame();
+		resetStopPointFrame();
 		savedStopPointInfoVisible = true;
 	}
 }
@@ -85,8 +89,9 @@ function savedStopPointOnClick(ev, row)
 	let info = storage.getStopPoints();
 	setCurrentStopPointInfo( { name: "", info: info } );
 	resetSavedStopPointFrame();
+	resetSearchFrame();
 	savedStopPointInfoVisible = false;
-	displayStopPointInfo(info);
+	displayStopPointInfo(info, true);
 	stopPointOnClick(ev, row);
 }
 

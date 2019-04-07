@@ -6,8 +6,8 @@ class Frame {
     }
 
     setVisibility(visible) {
-        //this._div_ele.style.display = visible ? "inline" : "none";
-        //this._visible = visible;
+        this._div_ele.style.display = visible ? "inline" : "none";
+        this._visible = visible;
     }
 
     clear() {

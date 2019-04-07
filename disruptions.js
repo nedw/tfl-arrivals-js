@@ -110,6 +110,7 @@ class Disruptions {
 		}
 		s += '<br>&emsp;' + Formatter.formatButton('Dismiss', 'disruptions.dismiss');
 		this.frame.setHTML(s);
+		this.frame.setVisibility(true);
 	}
 
 	dismiss() {
