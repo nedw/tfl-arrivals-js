@@ -66,6 +66,10 @@ class Request {
 	constructor() {
 	}
 	
+	addKey(url) {
+		return url + credentials;
+	}
+
 	request(url, resultCallback, statusCallback) {
 		this.resultCallback = resultCallback;
 		this.statusCallback = statusCallback;
@@ -74,6 +78,7 @@ class Request {
 		this.httpReq.onreadystatechange = this.status;
 		this.httpReq.req = this;
 		
+		url = this.addKey(url);
 		this.httpReq.open("GET", url, true);
 		this.timeSent = Date.now();
 		this.httpReq.send();
