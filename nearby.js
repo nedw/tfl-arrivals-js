@@ -16,19 +16,72 @@ class Nearby {
 	//		NaptanFerryPort,NaptanPublicBusCoachTram
 	//
 
-	static url(lat,lon) {
+	static get fix_location() {
+		if (false)
+			return { lat: 51.501527, lon: -0.219916 };
+		else
+			return false;
+	}
+
+	static get radius() {
+		return 500;
+	}
+	static url(lat, lon, radius) {
 		const stopTypes = "NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation,NaptanPublicBusCoachTram";
-		const radius = 300;
 		return `https://api.tfl.gov.uk/StopPoint?radius=${radius}&stopTypes=${stopTypes}&lat=${lat}&lon=${lon}`;
 	}
 
-	static locationResult(pos) {
-		alert("Location: lat " + pos.coords.latitude + ", lon " + pos.coords.longitude);
+	static nearbyError(status) {
+		if (debug & DEBUG_REQUEST)
+			console.log("nearbyError:", status);
+		stopPointInfoFrame.setHTML("Stop Point Error " + status);
+		setCurrentStopPointInfo(null);
+}			lat = Nearby.fix_location.lat;	//51.501527;
+lon = Nearby.fix_location.lon;	//-0.219916;
 
+
+	static nearbyResultCb(status, obj) {
+		if (status == 200) {
+			if (debug & DEBUG_REQUEST)
+				console.log("nearbyResultCb:", obj);
+			//
+			// Object returned by stop point radius request has an array called "stopPoints"
+			// rather than one called "children"
+			//
+			if (obj.stopPoints) {
+				let info = getStopPointInfo(obj);
+				setCurrentStopPointInfo(info);	// save away stop point list
+				displayStopPointInfo(info.info, false);
+			} else {
+				stopPointInfoFrame.setHTML("(No stop points)");
+				setCurrentStopPointInfo(null);
+			}
+		} else {
+			Nearby.nearbyError(status);
+		}
+	}
+
+	static nearbyStatusCb(req) {
+		if (debug & DEBUG_REQUEST)
+			console.log("nearby status", req);
+	}
+
+	static requestNearbyStops(lat, lon) {
+		nearbyReq = new Request();
+
+		if (Nearby.fix_location) {
+			var { lat, lon } = Nearby.fix_location;
+			console.log(`Fix location: lat ${lat}, lon ${lon}`);
+		}
+		nearbyReq.request(Nearby.url(lat, lon, Nearby.radius), Nearby.nearbyResultCb, Nearby.nearbyStatusCb);
+	}
+
+	static locationResult(pos) {
+		console.log("Location: lat " + pos.coords.latitude + ", lon " + pos.coords.longitude);
+		Nearby.requestNearbyStops(pos.coords.latitude, pos.coords.longitude);
 	}
 
 	static onClick() {
-		console.log("Nearby.onClick")
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(Nearby.locationResult);
 		}

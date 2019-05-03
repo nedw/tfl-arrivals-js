@@ -32,6 +32,7 @@
 const DEBUG_DISPLAY = 1;
 const DEBUG_REQUEST = 2;
 const DEBUG_PARSE = 4;
+
 const debug = 0;
 
 const CLASS_HIGHLIGHT = "highlight";
@@ -57,6 +58,7 @@ var currentSearchResultsInfo = null;
 var searchReq = null;
 var arrivalsReq = null;
 var stopPointReq = null;
+var nearbyReq = null;
 
 //
 // HTTP request object
@@ -67,7 +69,11 @@ class Request {
 	}
 	
 	addKey(url) {
-		return url + credentials;
+		if (url.indexOf("?") != -1) {
+			return url + "&" + credentials;
+		} else {
+			return url + "?" + credentials;
+		}
 	}
 
 	request(url, resultCallback, statusCallback) {
@@ -190,10 +196,10 @@ function getcurrentArrivalRequestId()
 
 function arrivalPredictionsResultCb(status, arrivalsObj)
 {
-	if (debug & DEBUG_REQUEST)
-		console.log("arrivalPredictionsResultCb", arrivalsObj);
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
+		if (debug & DEBUG_REQUEST)
+			console.log("arrivalPredictionsResultCb", arrivalsObj);
 		formatArrivalsInfo(arrivalsInfoFrame, arrivalsObj);
 	} else {
 		arrivalsError(status);
@@ -276,6 +282,8 @@ function searchResultCb(status, matchesObj)
 
 	setCurrentSearchResultsInfo(null);
 	if (status == 200) {
+		if (debug & DEBUG_REQUEST)
+			console.log("searchResultCb:", matchesObj);
 		var info = getInfoFromSearchMatches(matchesObj);	// info is an array
 		setCurrentSearchResultsInfo(info);
 		if (info.length == 1 && info[0].idUsable) {
@@ -394,6 +402,8 @@ function getCurrentStopPointInfo()
 function stopPointResultCb(status, stopPointObj)
 {
 	if (status == 200) {
+		if (debug & DEBUG_REQUEST)
+			console.log("stopPointResultCb:", stopPointObj);
 		stopPointReq = null;			// reference no longer needed
 		let info = getStopPointInfo(stopPointObj);
 		setCurrentStopPointInfo(info);	// save away stop point list

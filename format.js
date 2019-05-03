@@ -75,12 +75,10 @@ function generateStopPointTable(info, displayStopPointName)
 
 	if (info) {
 		// Table of stop points
-		for (var i = 0 ; i < info.length ; i++) {
-			var stop = info[i];
+		for (let i = 0 ; i < info.length ; i++) {
+			let stop = info[i];
 
-				
-
-			var lines;
+			let lines;
 			if (stop.lines)
 				lines = stop.lines.join(', ');
 			else
@@ -91,13 +89,21 @@ function generateStopPointTable(info, displayStopPointName)
 				dir = stop.dir;
 			else
 				dir = '';
-			
+
+			let row;
 			if (displayStopPointName)
-				tableData.push( [ stop.name ? stop.name : "", stop.stopName,  lines, dir ] );
+				row = [ stop.name ? stop.name : "", stop.stopName,  lines, dir ];
 			else
-				tableData.push( [ stop.stopName,  lines, dir ] );
+				row = [ stop.stopName,  lines, dir ];
+
+			if (stop.distance)						// from stop point radius requests
+				row.push(stop.distance + "m");
+			tableData.push(row);
 		}
 	}
+
+	if (debug & DEBUG_PARSE)
+		console.log("generateStopPointTable: return", tableData);
 	return tableData;
 }
 

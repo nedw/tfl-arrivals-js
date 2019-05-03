@@ -121,6 +121,10 @@ class Parser {
 				info.id = obj.stationNaptan;
 			else
 				info.id = null;			// what to do here if there is no id ?
+			
+				if (obj.distance)
+					info.distance = parseInt(obj.distance);
+			
 		}
 		return info;
 	}
@@ -129,6 +133,15 @@ class Parser {
 	{
 		if (obj.children && obj.children.length > 0) {
 			for (var child of obj.children) {
+				Parser.getStopPointInfo_recurse(child, obj, result);
+			}
+		} else 
+		if (obj.stopPoints && obj.stopPoints.length > 0) {
+			//
+			// Object returned by stop point radius request has an array called "stopPoints"
+			// instead of than one called "children".
+			//
+			for (var child of obj.stopPoints) {
 				Parser.getStopPointInfo_recurse(child, obj, result);
 			}
 		} else {
