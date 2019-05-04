@@ -80,6 +80,9 @@ class Parser {
 		var info = {};
 
 		if (obj.lines && obj.lines.length > 0) {
+			if (obj.commonName)								// For radius stop point request
+				info.name = obj.commonName;
+
 			if (obj.stopLetter)
 				info.stopName = "Stop " + obj.stopLetter;
 			else

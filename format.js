@@ -65,6 +65,23 @@ function formatSearchResults(frame, info)
 	frame.setVisibility(true);
 }
 
+function lineSort(a, b)
+{
+	a1 = parseInt(a);
+	b1 = parseInt(b);
+	if (!isNaN(a1)) {
+		if (!isNaN(b1))
+			return parseInt(a) - parseInt(b);
+		else
+			return -1;
+	} else {
+		if (!isNaN(b1))
+			return 1;
+		else {
+			return a.localeCompare(b);
+		}
+	}
+}
 //
 // Functions for formatting Stop Point information
 //
@@ -79,9 +96,11 @@ function generateStopPointTable(info, displayStopPointName)
 			let stop = info[i];
 
 			let lines;
-			if (stop.lines)
-				lines = stop.lines.join(', ');
-			else
+			if (stop.lines) {
+				let stopLines = [...stop.lines];
+				stopLines.sort(lineSort);
+				lines = stopLines.join(', ');
+			} else
 				lines = '';
 
 			var dir;

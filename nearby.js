@@ -26,9 +26,13 @@ class Nearby {
 	static get radius() {
 		return 500;
 	}
+
+	static get stopTypes() {
+		return "NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation,NaptanPublicBusCoachTram";
+	}
+
 	static url(lat, lon, radius) {
-		const stopTypes = "NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation,NaptanPublicBusCoachTram";
-		return `https://api.tfl.gov.uk/StopPoint?radius=${radius}&stopTypes=${stopTypes}&lat=${lat}&lon=${lon}`;
+		return `https://api.tfl.gov.uk/StopPoint?radius=${radius}&stopTypes=${Nearby.stopTypes}&lat=${lat}&lon=${lon}`;
 	}
 
 	static nearbyError(status) {
@@ -36,8 +40,7 @@ class Nearby {
 			console.log("nearbyError:", status);
 		stopPointInfoFrame.setHTML("Stop Point Error " + status);
 		setCurrentStopPointInfo(null);
-}			lat = Nearby.fix_location.lat;	//51.501527;
-lon = Nearby.fix_location.lon;	//-0.219916;
+	}
 
 
 	static nearbyResultCb(status, obj) {
@@ -51,7 +54,7 @@ lon = Nearby.fix_location.lon;	//-0.219916;
 			if (obj.stopPoints) {
 				let info = getStopPointInfo(obj);
 				setCurrentStopPointInfo(info);	// save away stop point list
-				displayStopPointInfo(info.info, false);
+				displayStopPointInfo(info.info, true);
 			} else {
 				stopPointInfoFrame.setHTML("(No stop points)");
 				setCurrentStopPointInfo(null);
