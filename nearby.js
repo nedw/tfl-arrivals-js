@@ -35,7 +35,7 @@ class Nearby {
 		return `https://api.tfl.gov.uk/StopPoint?radius=${radius}&stopTypes=${Nearby.stopTypes}&lat=${lat}&lon=${lon}`;
 	}
 
-	static nearbyError(status) {
+	nearbyError(status) {
 		if (debug & DEBUG_REQUEST)
 			console.log("nearbyError:", status);
 		stopPointInfoFrame.setHTML("Stop Point Error " + status);
@@ -43,7 +43,7 @@ class Nearby {
 	}
 
 
-	static nearbyResultCb(status, obj) {
+	nearbyResultCb(status, obj) {
 		if (status == 200) {
 			if (debug & DEBUG_REQUEST)
 				console.log("nearbyResultCb:", obj);
@@ -53,42 +53,53 @@ class Nearby {
 			//
 			if (obj.stopPoints) {
 				let info = getStopPointInfo(obj);
-				setCurrentStopPointInfo(info);	// save away stop point list
+				if (debug & DEBUG_REQUEST)
+					console.log("nearbyResultCb: info (set current)", info);
+				setCurrentStopPointInfo(info.name, info.info);	// save away stop point list
 				displayStopPointInfo(info.info, true);
 			} else {
 				stopPointInfoFrame.setHTML("(No stop points)");
 				setCurrentStopPointInfo(null);
 			}
 		} else {
-			Nearby.nearbyError(status);
+			nearby.nearbyError(status);
 		}
 	}
 
-	static nearbyStatusCb(req) {
+	nearbyStatusCb(req) {
 		if (debug & DEBUG_REQUEST)
 			console.log("nearby status", req);
 	}
 
-	static requestNearbyStops(lat, lon) {
+	requestNearbyStops(lat, lon) {
 		nearbyReq = new Request();
 
 		if (Nearby.fix_location) {
 			var { lat, lon } = Nearby.fix_location;
 			console.log(`Fix location: lat ${lat}, lon ${lon}`);
 		}
-		nearbyReq.request(Nearby.url(lat, lon, Nearby.radius), Nearby.nearbyResultCb, Nearby.nearbyStatusCb);
+		nearbyReq.request(Nearby.url(lat, lon, Nearby.radius), nearby.nearbyResultCb, nearby.nearbyStatusCb);
 	}
 
-	static locationResult(pos) {
-		console.log("Location: lat " + pos.coords.latitude + ", lon " + pos.coords.longitude);
-		Nearby.requestNearbyStops(pos.coords.latitude, pos.coords.longitude);
+	locationResult(pos) {
+		nearby._lastPosition = [ pos.coords.latitude, pos.coords.longitude ];
+		nearby.requestNearbyStops(...nearby._lastPosition);
 	}
 
-	static onClick() {
+	onClick(event) {
 		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(Nearby.locationResult);
-		}
+			navigator.geolocation.getCurrentPosition(nearby.locationResult);
+		} else
+			alert("No navigator object!");
 	}
 
 }
 
+var nearby = new Nearby();
+
+// For some reason, mapApiLoaded() cannot be a static function within Nearby class.
+
+function mapApiLoaded()
+{
+	nearby.mapApiLoaded();
+}

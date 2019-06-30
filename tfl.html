@@ -12,7 +12,11 @@
 <script src="table.js"></script>
 <script src="disruptions.js"></script>
 <script src="nearby.js"></script>
+<script src="geomap.js"></script>
 <script src="credentials.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" async defer></script>
 </head>
 
 <body onload="bodyLoadedEvent(event)">
@@ -26,7 +30,9 @@
 &emsp;
 <input type="button" class="info" id="disruptionsButton" value="Disruptions" onclick="Disruptions.onClick(event)"/>
 &emsp;
-<input type="button" class="info" id="nearbyButton" value="Nearby" onclick="Nearby.onClick(event)"/>
+<input type="button" class="info" id="nearbyButton" value="Nearby" onclick="nearby.onClick(event)"/>
+&emsp;
+<input type="button" class="info" id="mapButton" value="Map" onclick="geomap.onClick(event)"/>
 <hr>
 <br>
 </body>

@@ -41,6 +41,7 @@ var arrivalsInfoFrame = null;
 var searchInfoFrame = null;
 var stopPointInfoFrame = null;
 var savedStopPointFrame = null;
+var mapFrame = null;
 
 var searchTextEl = null;
 var displayNightBuses = false;
@@ -116,6 +117,8 @@ function bodyLoadedEvent(event)
 	stopPointInfoFrame = new Frame();
 	arrivalsInfoFrame = new Frame();
 	savedStopPointFrame = new Frame();
+	mapFrame = new Frame("mapFrame");
+
 	disruptions.bodyLoaded();
 
 	searchInfoFrame.addToBody();
@@ -123,6 +126,7 @@ function bodyLoadedEvent(event)
 	arrivalsInfoFrame.addToBody();
 	savedStopPointFrame.addToBody();
 	disruptions.getFrame().addToBody();
+	mapFrame.addToBody();
 
 	searchTextEl = document.getElementById("searchText");
 	storage.loadStopPoints();
@@ -385,9 +389,9 @@ function displayStopPointInfo(info, displayStopPointName)
 	formatStopPointFrame(stopPointInfoFrame, info, displayStopPointName);
 }
 
-function setCurrentStopPointInfo(info)
+function setCurrentStopPointInfo(name, info)
 {
-	currentStopPointInfo = info;
+	currentStopPointInfo = { name: name, info: info };
 }
 
 function getCurrentStopPointInfo()
@@ -403,10 +407,12 @@ function stopPointResultCb(status, stopPointObj)
 {
 	if (status == 200) {
 		if (debug & DEBUG_REQUEST)
-			console.log("stopPointResultCb:", stopPointObj);
+			console.log("stopPointResultCb: stopPointObj", stopPointObj);
 		stopPointReq = null;			// reference no longer needed
 		let info = getStopPointInfo(stopPointObj);
-		setCurrentStopPointInfo(info);	// save away stop point list
+		if (debug & DEBUG_REQUEST)
+			console.log("stopPointResultCb: info (set current)", info);
+		setCurrentStopPointInfo(info.name, info.info);	// save away stop point list
 		displayStopPointInfo(info.info, false);
 	} else {
 		stopPointInfoFrame.setHTML("Stop Point Error " + status);

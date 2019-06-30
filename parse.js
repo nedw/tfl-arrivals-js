@@ -101,6 +101,9 @@ class Parser {
 			if (props.direction)
 				info.dir = props.direction;
 
+			if (obj.lat && obj.lon)
+				info.pos = [ obj.lat, obj.lon ];
+
 			// TODO - rename "lines" and "ids"
 			info.lines = [];
 			//info.ids = [];
@@ -182,9 +185,12 @@ function getStopPointInfo(obj)
 		console.log("getStopPointInfo: obj", obj);
 	var info = [];
 	Parser.getStopPointInfo_recurse(obj, null, info);
-	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: return info", info);
-	return { name: obj.commonName, info: info };
+	let ret = { name: obj.commonName, info: info };
+	if (obj.centrePoint)
+		ret.pos = obj.centrePoint;
+		if (debug & DEBUG_PARSE)
+		console.log("getStopPointInfo: return ret", ret);
+	return ret;
 }
 
 function compareEqual(obj1, obj2)

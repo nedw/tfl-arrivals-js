@@ -122,7 +122,7 @@ function generateStopPointTable(info, displayStopPointName)
 	}
 
 	if (debug & DEBUG_PARSE)
-		console.log("generateStopPointTable: return", tableData);
+		console.log("generateStopPointTable: return tableData", tableData);
 	return tableData;
 }
 
