@@ -43,16 +43,16 @@ function saveButtonOnClick(ev)
 	//console.log("saveButtonOnClick(", ev, "): name ", stopPointInfo.name);
 	let savedStopPoints = generateStopPointsToSave(stopPointTable, stopPointInfo);
 	if (debug & DEBUG_PARSE)
-		console.log("saveButtonOnClick: savedStopPoints", savedStopPoints);
+		console.log("select: saveButtonOnClick(): savedStopPoints", savedStopPoints);
 	storage.setStopPoints(savedStopPoints);
 }
 
 function generateSavedStopPointTable(savedStopPoints, checkboxesVisible)
 {
 	if (debug & DEBUG_PARSE)
-		console.log("generateSavedStopPointTable: ", savedStopPoints);
+		console.log("select: generateSavedStopPointTable(savedStopPoints):", savedStopPoints);
 	let tableData = generateStopPointTable(savedStopPoints, true);
-	savedStopPointTable = new Table(tableData, 'savedStopPointOnClick', 'Table.checkboxOnChange');
+	savedStopPointTable = new Table(tableData, 0, 'savedStopPointOnClick', 'Table.checkboxOnChange');
 	if (checkboxesVisible)
 		savedStopPointTable.toggleCheckBoxVisibility();
 	let s = '<p>Saved Stop Points:<br>' + Formatter.formatButton('Select', 'selectSavedOnClick') + '&emsp;' +
@@ -72,7 +72,7 @@ function savedOnClick(ev)
 	searchInfoFrame.clear();
 	let info = storage.getStopPoints();
 	if (debug & DEBUG_PARSE)
-		console.log("savedOnClick: info (set current): ", info);
+		console.log("select: savedOnClick(): info (set current): ", info);
 	setCurrentStopPointInfo(undefined, info);
 	generateSavedStopPointTable(info, false);
 	resetSearchFrame();
@@ -86,6 +86,7 @@ function savedOnClick(ev)
 
 function savedStopPointOnClick(ev, row)
 {
+	console.log("savedStopPointOnClick");
 	let info = storage.getStopPoints();
 	resetSavedStopPointFrame();
 	resetSearchFrame();

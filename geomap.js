@@ -37,7 +37,7 @@ class GeoMap {
 	displayMap(info)
 	{
 		if (debug & DEBUG_PARSE)
-			console.log("displayMap: info: ", info);
+			console.log("geomap: displayMap(info): ", info);
 
 		this.formatMapFrame();
 

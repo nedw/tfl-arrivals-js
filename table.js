@@ -15,11 +15,11 @@ class SpanInfo {
 };
 
 class Table {
-    constructor(tableData, rowClickCb, checkChangeCb = null) {
+    constructor(tableData, dontSpanCols, rowClickCb, checkChangeCb = null) {
         this._table_ele = document.createElement("table");
         this._table_ele.border = "1";
 
-        var s = this.createTableHTML(tableData, rowClickCb, checkChangeCb);
+        var s = this.createTableHTML(tableData, dontSpanCols, rowClickCb, checkChangeCb);
         this._table_ele.innerHTML = s;
         this._rows = tableData.length;
 
@@ -53,6 +53,7 @@ class Table {
 
     //
     // Create a table indicating HTML rowspan information, to merge duplicate row text
+    // The "dontSpanCols" argument is a bitmap indicating which columns not to span.
     //
     // Work through the table comparing each column against the previous column.  
     // Build up a 2D array, mirroring the "tableData" information, that contains the
@@ -65,12 +66,12 @@ class Table {
     //      startRow            If rowSpan = 0, row where rowspan starts, else -1.  Used to increment
     //                          rowSpan entry for corresponding cell is that row.
     //
-    createSpanInfo(tableData) {
+    createSpanInfo(tableData, dontSpanCols) {
         var spanInfo = [];
         for (var row = 0 ; row < tableData.length ; row++) {
             spanInfo[row] = [];
     		for (var col = 0 ; col < tableData[row].length ; col++) {
-                if (row == 0 || tableData[row-1][col] != tableData[row][col]) {
+                if (row == 0 || tableData[row-1][col] != tableData[row][col] || (dontSpanCols & (1 << col)) != 0) {
                     spanInfo[row].push(new SpanInfo());
                 } else {
                     var index = row - 1;
@@ -91,6 +92,7 @@ class Table {
    	//
 	// Generate a table from a two dimensional array of strings, where each element represents a table
 	// data cell.  Each row can have a variable number of columns, ie:
+    // The "dontSpanCols" argument is a bitmap indicating which columns not to merge with a span
 	//
 	// tableData: [
 	//			  [ col1, col2, ..., colM ],
@@ -99,8 +101,8 @@ class Table {
 	//			  ]
 	//
 
-    createTableHTML(tableData, rowClickCb, checkChangeCb) {
-        var spanInfo = this.createSpanInfo(tableData)
+    createTableHTML(tableData, dontSpanCols, rowClickCb, checkChangeCb) {
+        var spanInfo = this.createSpanInfo(tableData, dontSpanCols)
         var s = "";
         for (var row = 0 ; row < tableData.length ; row++) {
 			if (rowClickCb)

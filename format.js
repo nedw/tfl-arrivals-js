@@ -2,6 +2,10 @@ var searchTable = null;
 var stopPointTable = null;
 var arrivalsTable = null;
 
+var noMerge = true;
+const NOMERGE_COL = 1;
+const NOMERGE_COL_MAP = 1 << NOMERGE_COL;
+
 class Formatter {
 	static formatButton(value, callback)
 	{
@@ -60,7 +64,7 @@ function formatSearchResults(frame, info)
 	var s = '<p>Search Results:<br>';
 	frame.setHTML(s);
 
-	searchTable = new Table(tableData, 'searchOnClick', null);
+	searchTable = new Table(tableData, 0, 'searchOnClick', null);
 	frame.appendNode(searchTable.getNode());
 	frame.setVisibility(true);
 }
@@ -122,14 +126,15 @@ function generateStopPointTable(info, displayStopPointName)
 	}
 
 	if (debug & DEBUG_PARSE)
-		console.log("generateStopPointTable: return tableData", tableData);
+		console.log("format: generateStopPointTable(): (return) tableData", tableData);
 	return tableData;
 }
 
 function formatStopPointFrame(frame, info, displayStopPointName)
 {
 	let tableData = generateStopPointTable(info, displayStopPointName);
-	stopPointTable = new Table(tableData, 'stopPointOnClick', 'Table.checkboxOnChange');
+	// "noMerge" means don't merge column 2 (i.e. route names)
+	stopPointTable = new Table(tableData, noMerge ? NOMERGE_COL_MAP : 0, 'stopPointOnClick', 'Table.checkboxOnChange');
 
 	frame.setVisibility(false);
 	// "Select" and "Save" buttons
@@ -216,13 +221,13 @@ function generateArrivalsInfoTable(info)
 function formatArrivalsInfo(frame, info)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("formatArrivalsInfo: ", info);
+		console.log("format: formatArrivalsInfo(info): ", info);
 	var s;
 	frame.setVisibility(false);
 	if (info.length > 0) {
 		info.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
 		let tableData = generateArrivalsInfoTable(info);
-		arrivalsTable = new Table(tableData, null, null);
+		arrivalsTable = new Table(tableData, 0, null, null);
 		arrivalsInfoFrame.setHTML('<p>Arrivals:<br>');
 		arrivalsInfoFrame.appendNode(arrivalsTable.getNode());
 		s = '';

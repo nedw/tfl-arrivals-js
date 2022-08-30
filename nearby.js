@@ -16,6 +16,8 @@ class Nearby {
 	//		NaptanFerryPort,NaptanPublicBusCoachTram
 	//
 
+	static NEARBY_RADIUS = 600;
+
 	static get fix_location() {
 		if (false)
 			return { lat: 51.501527, lon: -0.219916 };
@@ -24,7 +26,7 @@ class Nearby {
 	}
 
 	static get radius() {
-		return 500;
+		return Nearby.NEARBY_RADIUS;
 	}
 
 	static get stopTypes() {
@@ -37,7 +39,7 @@ class Nearby {
 
 	nearbyError(status) {
 		if (debug & DEBUG_REQUEST)
-			console.log("nearbyError:", status);
+			console.log("nearby: nearbyError(status" + status + ")");
 		stopPointInfoFrame.setHTML("Stop Point Error " + status);
 		setCurrentStopPointInfo(null);
 	}
@@ -46,7 +48,7 @@ class Nearby {
 	nearbyResultCb(status, obj) {
 		if (status == 200) {
 			if (debug & DEBUG_REQUEST)
-				console.log("nearbyResultCb:", obj);
+				console.log("nearby: nearbyResultCb(obj): ", obj);
 			//
 			// Object returned by stop point radius request has an array called "stopPoints"
 			// rather than one called "children"
@@ -54,7 +56,7 @@ class Nearby {
 			if (obj.stopPoints) {
 				let info = getStopPointInfo(obj);
 				if (debug & DEBUG_REQUEST)
-					console.log("nearbyResultCb: info (set current)", info);
+					console.log("nearby: nearbyResultCb(): info (set current)", info);
 				setCurrentStopPointInfo(info.name, info.info);	// save away stop point list
 				displayStopPointInfo(info.info, true);
 			} else {
@@ -68,7 +70,7 @@ class Nearby {
 
 	nearbyStatusCb(req) {
 		if (debug & DEBUG_REQUEST)
-			console.log("nearby status", req);
+			console.log("nearby: nearbyStatusCb(req):", req);
 	}
 
 	requestNearbyStops(lat, lon) {

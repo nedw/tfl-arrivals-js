@@ -39,7 +39,7 @@ have a set of stop points, pressing `Select` will display a set of check boxes t
 of each stop point.  Select the stop points of interest and then press `Save`.  You can
 display your saved stop points by pressing on the `Saved` button at the top of the screen.
 
-The `Nearby` button will display all stop points that are within ~500m.  If you press this,
+The `Nearby` button will display all stop points that are within ~600m.  If you press this,
 you may get a popup requesting permission to retrieve your location.  This is only used
 to retrieve the neaby stop points and is not saved.
 

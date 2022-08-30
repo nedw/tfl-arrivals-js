@@ -163,11 +163,11 @@ function getInfoFromSearchMatches(obj)
 {
 	var ret = [];
 	if (debug & DEBUG_PARSE)
-		console.log("getInfoFromSearchMatches: obj", obj);
+		console.log("parse: getInfoFromSearchMatches(obj):", obj);
 	if (obj.matches) {
 		for (var match of obj.matches) {
 			if (!match.id) {
-				console.log("getInfoFromSearchMatches(): id not in match");
+				console.log("parse: getInfoFromSearchMatches(): id not in match");
 			} else {
 				let info = Parser.getInfoFromSearchMatch(match);
 				ret.push(info);
@@ -175,21 +175,21 @@ function getInfoFromSearchMatches(obj)
 		}
 	}
 	if (debug & DEBUG_PARSE)
-		console.log("getInfoFromSearchMatches: return", ret);
+		console.log("parse: getInfoFromSearchMatches(): (return)", ret);
 	return ret;
 }
 
 function getStopPointInfo(obj)
 {
 	if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: obj", obj);
+		console.log("parse: getStopPointInfo(obj):", obj);
 	var info = [];
 	Parser.getStopPointInfo_recurse(obj, null, info);
 	let ret = { name: obj.commonName, info: info };
 	if (obj.centrePoint)
 		ret.pos = obj.centrePoint;
 		if (debug & DEBUG_PARSE)
-		console.log("getStopPointInfo: return ret", ret);
+		console.log("parse: getStopPointInfo(): (return) ret", ret);
 	return ret;
 }
 
@@ -216,7 +216,7 @@ function isDuplicate(list, obj)
 	for (var i = 0 ; i < list.length; ++i) {
 		if (compareEqual(list[i], obj)) {
 			if (debug & DEBUG_PARSE)
-				console.log("isDuplicate:", obj);
+				console.log("isDuplicate(obj):", obj);
 			return true;
 		}
 	}

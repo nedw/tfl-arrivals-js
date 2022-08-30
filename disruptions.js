@@ -132,6 +132,8 @@ class Disruptions {
 
 	issueRequest()
 	{
+		if (debug & DEBUG_REQUEST)
+			console.log("disruptions: issueRequest()");
 		this.req = new Request();
 		this.req.request(Disruptions.url(),
 						 (status, obj) => this.resultCb(status, obj),
@@ -144,6 +146,9 @@ class Disruptions {
 
 	resultCb(status, obj) {
 		this.req = null;
+		if (debug & DEBUG_REQUEST)
+			console.log("disruptions: resultCb(status " + status + ")");
+
 		if (status == 200) {
 			this.displayResult(obj);
 		} else {

@@ -183,7 +183,7 @@ function setSelectionHighlight(ele)
 function arrivalsError(status)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("ArrivalsError(", status, ")");
+		console.log("tfl: ArrivalsError(status", status, ")");
 	setCurrentArrivalRequestId(null);
 }
 
@@ -203,7 +203,7 @@ function arrivalPredictionsResultCb(status, arrivalsObj)
 	arrivalsReq = null;					// reference no longer needed
 	if (status == 200) {
 		if (debug & DEBUG_REQUEST)
-			console.log("arrivalPredictionsResultCb", arrivalsObj);
+			console.log("tfl: arrivalPredictionsResultCb(arrivalsObj):", arrivalsObj);
 		formatArrivalsInfo(arrivalsInfoFrame, arrivalsObj);
 	} else {
 		arrivalsError(status);
@@ -219,7 +219,7 @@ function arrivalPredictionsStatusCb(req)
 function requestArrivalPredictions(id)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("requestArrivalPredictions: id", id);
+		console.log("tfl: requestArrivalPredictions(id " + id + ")");
 	setCurrentArrivalRequestId(id);
 	arrivalsReq = new Request();
 	arrivalsReq.request(getStopPointArrivalsUrl(id), arrivalPredictionsResultCb, arrivalPredictionsStatusCb);
@@ -244,7 +244,8 @@ function searchOnChange(ev)
 function searchSubmitOnClick(ev)
 {
 	resetFrames();
-	console.log(searchTextEl.value);
+	if (debug & DEBUG_DISPLAY)
+		console.log(searchTextEl.value);
 	requestTextSearchMatches(searchTextEl.value);
 }
 
@@ -271,7 +272,7 @@ function requestTextSearchMatches(text)
 function searchError(status)
 {
 	if (debug & DEBUG_REQUEST)
-		console.log("searchError(", status, ")");
+		console.log("tfl: searchError(", status, ")");
 	searchInfoFrame.setHTML("<b>Search Error " + status);
 }
 
@@ -287,7 +288,7 @@ function searchResultCb(status, matchesObj)
 	setCurrentSearchResultsInfo(null);
 	if (status == 200) {
 		if (debug & DEBUG_REQUEST)
-			console.log("searchResultCb:", matchesObj);
+			console.log("tfl: searchResultCb(matchesObj):", matchesObj);
 		var info = getInfoFromSearchMatches(matchesObj);	// info is an array
 		setCurrentSearchResultsInfo(info);
 		if (info.length == 1 && info[0].idUsable) {
@@ -371,7 +372,7 @@ function stopPointOnClick(event, rowStr)
 {
 	let row = parseInt(rowStr, 10);
 	if (debug & DEBUG_REQUEST)
-		console.log("stopPointOnClick: ", row);
+		console.log("tfl: stopPointOnClick(rowStr):", row);
 	//var rowEle = event.target.parentNode;
 	if (!targetIsCheckbox(event)) {
 		let rowEle = getTableRowElement(stopPointInfoFrame, row);
@@ -385,7 +386,7 @@ function stopPointOnClick(event, rowStr)
 function displayStopPointInfo(info, displayStopPointName)
 {
 	if (debug & DEBUG_DISPLAY)
-		console.log("displayStopPointInfo: ", info);
+		console.log("tfl: displayStopPointInfo(info):", info);
 	formatStopPointFrame(stopPointInfoFrame, info, displayStopPointName);
 }
 
@@ -407,11 +408,11 @@ function stopPointResultCb(status, stopPointObj)
 {
 	if (status == 200) {
 		if (debug & DEBUG_REQUEST)
-			console.log("stopPointResultCb: stopPointObj", stopPointObj);
+			console.log("tfl: stopPointResultCb(stopPointObj):", stopPointObj);
 		stopPointReq = null;			// reference no longer needed
 		let info = getStopPointInfo(stopPointObj);
 		if (debug & DEBUG_REQUEST)
-			console.log("stopPointResultCb: info (set current)", info);
+			console.log("tfl: stopPointResultCb(info): (set current)", info);
 		setCurrentStopPointInfo(info.name, info.info);	// save away stop point list
 		displayStopPointInfo(info.info, false);
 	} else {
@@ -429,7 +430,7 @@ function searchOnClick(event, row)
 {
 	row = parseInt(row, 10);
 	if (debug & DEBUG_REQUEST)
-		console.log("searchOnClick", row);
+		console.log("searchOnClick(row): ", row);
 	let rowEle = event.target.parentNode;
 	setSelectionHighlight(rowEle);
 	resetArrivalsFrame();
